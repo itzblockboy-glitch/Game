@@ -16,6 +16,7 @@ Open the URL on your phone (same Wi-Fi, use `http://<lan-ip>:3000`) for the touc
 
 ![Spawn view](docs/screenshots/spawn.jpg)
 ![Downtown skyline](docs/screenshots/skyline.jpg)
+![Rigged player character, HDR post-processing](docs/screenshots/rigged-player.png)
 
 | Sketchfab asset hub | Phone / touch build |
 |---|---|
