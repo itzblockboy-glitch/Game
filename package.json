@@ -1,0 +1,39 @@
+{
+  "name": "los-santos",
+  "version": "1.0.0",
+  "description": "LOS SANTOS \u2014 low-poly third-person open-world action game in Three.js/WebGL with multiplayer voice chat and ultra-low data netcode.",
+  "main": "index.js",
+  "scripts": {
+    "assets": "node scripts/generate-glb-models.mjs",
+    "vendor": "node scripts/sync-vendor.mjs",
+    "postinstall": "node scripts/sync-vendor.mjs",
+    "dev": "node scripts/sync-vendor.mjs && node scripts/build.mjs && node server.js",
+    "build": "node scripts/sync-vendor.mjs && node scripts/generate-glb-models.mjs && node scripts/build.mjs",
+    "start": "node server.js",
+    "check": "node scripts/check.mjs",
+    "simulate": "node scripts/simulate.mjs",
+    "test": "npm run check && npm run simulate"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itzblockboy-glitch/Game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/itzblockboy-glitch/Game/issues"
+  },
+  "homepage": "https://github.com/itzblockboy-glitch/Game#readme",
+  "dependencies": {
+    "compression": "^1.8.2",
+    "express": "^5.3.0",
+    "three": "^0.187.0",
+    "ws": "^8.22.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "gltf-validator": "^2.0.0-dev.3.10"
+  },
+  "type": "module"
+}

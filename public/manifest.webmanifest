@@ -1,0 +1,11 @@
+{
+  "name": "LOS SANTOS — Open World",
+  "short_name": "Los Santos",
+  "description": "Low-poly third-person open-world action game with multiplayer voice chat.",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#06080d",
+  "theme_color": "#070a11",
+  "icons": []
+}

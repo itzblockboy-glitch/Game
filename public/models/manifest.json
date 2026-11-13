@@ -1,0 +1,2725 @@
+{
+ "generatedAt": "2026-11-12T13:01:04.085Z",
+ "models": [
+  {
+   "id": "map_los_santos",
+   "kind": "map",
+   "file": "/models/map_los_santos.glb",
+   "bytes": 7515732,
+   "triangles": 97996,
+   "title": "Indian Bike Driving 3D Map",
+   "sketchfab": "https://skfb.ly/oXqAw",
+   "scale": 1,
+   "spawn": [
+    -40,
+    0.4,
+    -40
+   ]
+  },
+  {
+   "id": "map_indian_bike_stunt",
+   "kind": "map",
+   "file": "/models/map_indian_bike_stunt.glb",
+   "bytes": 174224,
+   "triangles": 2540,
+   "title": "map_indian_bike_stunt",
+   "sketchfab": null,
+   "scale": 1,
+   "spawn": [
+    0,
+    0,
+    120
+   ]
+  },
+  {
+   "id": "player_jason",
+   "kind": "player",
+   "file": "/models/player_jason.glb",
+   "bytes": 54896,
+   "triangles": 556,
+   "title": "GTA 6 Jason",
+   "sketchfab": "https://skfb.ly/pLoCM",
+   "scale": 1
+  },
+  {
+   "id": "player_lucia",
+   "kind": "player",
+   "file": "/models/player_lucia.glb",
+   "bytes": 53324,
+   "triangles": 544,
+   "title": "GTA 6 Lucia",
+   "sketchfab": "https://skfb.ly/pzB9n",
+   "scale": 1
+  },
+  {
+   "id": "npc_woman_pose_v13",
+   "kind": "npc",
+   "file": "/models/npc_woman_pose_v13.glb",
+   "bytes": 53964,
+   "triangles": 556,
+   "title": "Woman Pose V13",
+   "sketchfab": "https://skfb.ly/pPFxM",
+   "scale": 1,
+   "archetype": "npc_woman_pose_v13"
+  },
+  {
+   "id": "npc_mai_shiranui",
+   "kind": "npc",
+   "file": "/models/npc_mai_shiranui.glb",
+   "bytes": 53976,
+   "triangles": 556,
+   "title": "Mai Shiranui | Street Fighter",
+   "sketchfab": "https://skfb.ly/pN79q",
+   "scale": 1,
+   "archetype": "npc_mai_shiranui"
+  },
+  {
+   "id": "npc_woman_standing_v33",
+   "kind": "npc",
+   "file": "/models/npc_woman_standing_v33.glb",
+   "bytes": 57712,
+   "triangles": 588,
+   "title": "Woman Standing V33",
+   "sketchfab": "https://skfb.ly/pNHZp",
+   "scale": 1,
+   "archetype": "npc_woman_standing_v33"
+  },
+  {
+   "id": "npc_woman_ballet",
+   "kind": "npc",
+   "file": "/models/npc_woman_ballet.glb",
+   "bytes": 56036,
+   "triangles": 588,
+   "title": "Woman Ballet",
+   "sketchfab": "https://skfb.ly/pOSEA",
+   "scale": 1,
+   "archetype": "npc_woman_ballet"
+  },
+  {
+   "id": "npc_woman_standing_v12",
+   "kind": "npc",
+   "file": "/models/npc_woman_standing_v12.glb",
+   "bytes": 53192,
+   "triangles": 556,
+   "title": "Woman Standing V12",
+   "sketchfab": "https://skfb.ly/pO8FT",
+   "scale": 1,
+   "archetype": "npc_woman_standing_v12"
+  },
+  {
+   "id": "npc_female_cowgirl",
+   "kind": "npc",
+   "file": "/models/npc_female_cowgirl.glb",
+   "bytes": 59516,
+   "triangles": 616,
+   "title": "Female Cowgirl V4",
+   "sketchfab": "https://skfb.ly/pOnQA",
+   "scale": 1,
+   "archetype": "npc_female_cowgirl"
+  },
+  {
+   "id": "npc_office_worker_male",
+   "kind": "npc",
+   "file": "/models/npc_office_worker_male.glb",
+   "bytes": 53944,
+   "triangles": 532,
+   "title": "158 Office Worker (Male) MUA",
+   "sketchfab": "https://skfb.ly/oKUMr",
+   "scale": 1,
+   "archetype": "npc_office_worker_male"
+  },
+  {
+   "id": "npc_psx_male_1",
+   "kind": "npc",
+   "file": "/models/npc_psx_male_1.glb",
+   "bytes": 50808,
+   "triangles": 496,
+   "title": "PSX PS1 Male Character 1 (updated)",
+   "sketchfab": "https://skfb.ly/pruMw",
+   "scale": 1,
+   "archetype": "npc_psx_male_1"
+  },
+  {
+   "id": "npc_male_suit",
+   "kind": "npc",
+   "file": "/models/npc_male_suit.glb",
+   "bytes": 52592,
+   "triangles": 536,
+   "title": "Male Character in Suit",
+   "sketchfab": "https://skfb.ly/pzrBP",
+   "scale": 1,
+   "archetype": "npc_male_suit"
+  },
+  {
+   "id": "npc_male_ps1",
+   "kind": "npc",
+   "file": "/models/npc_male_ps1.glb",
+   "bytes": 51552,
+   "triangles": 520,
+   "title": "Male Character PS1-Style",
+   "sketchfab": "https://skfb.ly/o7JPX",
+   "scale": 1,
+   "archetype": "npc_male_ps1"
+  },
+  {
+   "id": "npc_cartoon_male_2",
+   "kind": "npc",
+   "file": "/models/npc_cartoon_male_2.glb",
+   "bytes": 57504,
+   "triangles": 610,
+   "title": "Cartoonish Male Character_2",
+   "sketchfab": "https://skfb.ly/p9LxB",
+   "scale": 1,
+   "archetype": "npc_cartoon_male_2"
+  },
+  {
+   "id": "npc_chef",
+   "kind": "npc",
+   "file": "/models/npc_chef.glb",
+   "bytes": 53944,
+   "triangles": 532,
+   "title": "npc_chef",
+   "sketchfab": null,
+   "scale": 1,
+   "archetype": "npc_chef"
+  },
+  {
+   "id": "npc_cop",
+   "kind": "npc",
+   "file": "/models/npc_cop.glb",
+   "bytes": 55536,
+   "triangles": 556,
+   "title": "npc_cop",
+   "sketchfab": null,
+   "scale": 1,
+   "archetype": "npc_cop"
+  },
+  {
+   "id": "npc_jogger",
+   "kind": "npc",
+   "file": "/models/npc_jogger.glb",
+   "bytes": 55112,
+   "triangles": 586,
+   "title": "npc_jogger",
+   "sketchfab": null,
+   "scale": 1,
+   "archetype": "npc_jogger"
+  },
+  {
+   "id": "ferrari_daytona_sp3",
+   "kind": "vehicle",
+   "file": "/models/ferrari_daytona_sp3.glb",
+   "bytes": 80044,
+   "triangles": 936,
+   "title": "Ferrari Daytona SP3",
+   "sketchfab": "https://skfb.ly/pPznn",
+   "scale": 1,
+   "seats": 2,
+   "topSpeed": 92,
+   "handling": 0.92,
+   "mass": 1450
+  },
+  {
+   "id": "porsche_mission_x",
+   "kind": "vehicle",
+   "file": "/models/porsche_mission_x.glb",
+   "bytes": 81672,
+   "triangles": 948,
+   "title": "2023 Porsche Mission X Concept",
+   "sketchfab": "https://skfb.ly/pPE7K",
+   "scale": 1,
+   "seats": 2,
+   "topSpeed": 96,
+   "handling": 0.94,
+   "mass": 1500
+  },
+  {
+   "id": "porsche_911_gt3r",
+   "kind": "vehicle",
+   "file": "/models/porsche_911_gt3r.glb",
+   "bytes": 75832,
+   "triangles": 872,
+   "title": "Porsche 911 GT3 R Rennsport",
+   "sketchfab": "https://skfb.ly/pPEQ6",
+   "scale": 1,
+   "seats": 2,
+   "topSpeed": 90,
+   "handling": 0.97,
+   "mass": 1300
+  },
+  {
+   "id": "mustang_roush_1996",
+   "kind": "vehicle",
+   "file": "/models/mustang_roush_1996.glb",
+   "bytes": 72676,
+   "triangles": 824,
+   "title": "1996 Jack Roush Edition Ford Mustang",
+   "sketchfab": "https://skfb.ly/pPwvM",
+   "scale": 1,
+   "seats": 4,
+   "topSpeed": 78,
+   "handling": 0.78,
+   "mass": 1600
+  },
+  {
+   "id": "police_car",
+   "kind": "vehicle",
+   "file": "/models/police_car.glb",
+   "bytes": 78400,
+   "triangles": 860,
+   "title": "Police car",
+   "sketchfab": "https://skfb.ly/pONP7",
+   "scale": 1,
+   "seats": 4,
+   "topSpeed": 74,
+   "handling": 0.8,
+   "mass": 1700,
+   "siren": true
+  },
+  {
+   "id": "police_lambo_diablo",
+   "kind": "vehicle",
+   "file": "/models/police_lambo_diablo.glb",
+   "bytes": 81516,
+   "triangles": 908,
+   "title": "1995 Lamborghini Diablo SV - Police",
+   "sketchfab": "https://skfb.ly/pPxRQ",
+   "scale": 1,
+   "seats": 2,
+   "topSpeed": 94,
+   "handling": 0.9,
+   "mass": 1500,
+   "siren": true
+  },
+  {
+   "id": "redbull_rb22",
+   "kind": "vehicle",
+   "file": "/models/redbull_rb22.glb",
+   "bytes": 68956,
+   "triangles": 828,
+   "title": "2026 Redbull RB22",
+   "sketchfab": "https://skfb.ly/pOvxI",
+   "scale": 1,
+   "seats": 1,
+   "topSpeed": 118,
+   "handling": 1,
+   "mass": 800
+  },
+  {
+   "id": "ural_4320_truck",
+   "kind": "vehicle",
+   "file": "/models/ural_4320_truck.glb",
+   "bytes": 104552,
+   "triangles": 1192,
+   "title": "URAL-4320 (soviet-army truck)",
+   "sketchfab": "https://skfb.ly/pPRBQ",
+   "scale": 1,
+   "seats": 2,
+   "topSpeed": 42,
+   "handling": 0.55,
+   "mass": 8000,
+   "heavy": true
+  },
+  {
+   "id": "aeroplane",
+   "kind": "aircraft",
+   "file": "/models/aeroplane.glb",
+   "bytes": 58804,
+   "triangles": 728,
+   "title": "Aeroplane",
+   "sketchfab": "https://skfb.ly/pPHRF",
+   "scale": 1,
+   "seats": 4,
+   "topSpeed": 105,
+   "lift": 1,
+   "cockpit": false
+  },
+  {
+   "id": "ka350_flight_deck",
+   "kind": "aircraft",
+   "file": "/models/ka350_flight_deck.glb",
+   "bytes": 45676,
+   "triangles": 584,
+   "title": "KA350 King Air Flight Deck",
+   "sketchfab": "https://skfb.ly/pPpVS",
+   "scale": 1,
+   "interior": true
+  },
+  {
+   "id": "little_bird_helicopter",
+   "kind": "aircraft",
+   "file": "/models/little_bird_helicopter.glb",
+   "bytes": 41392,
+   "triangles": 512,
+   "title": "MH-6 Little Bird [Low Poly]",
+   "sketchfab": "https://skfb.ly/pPDEE",
+   "scale": 1,
+   "seats": 4,
+   "topSpeed": 88,
+   "lift": 1.15,
+   "rotor": true
+  },
+  {
+   "id": "weapon_g17_handgun",
+   "kind": "weapon",
+   "file": "/models/weapon_g17_handgun.glb",
+   "bytes": 13504,
+   "triangles": 156,
+   "title": "G17 Gen 5 Handgun + Olight - NSW",
+   "sketchfab": "https://skfb.ly/pOAnq",
+   "scale": 1,
+   "damage": 24,
+   "rpm": 320,
+   "range": 90,
+   "ammo": 17,
+   "mode": "semi",
+   "grip": [
+    0,
+    -0.02,
+    -0.1
+   ]
+  },
+  {
+   "id": "weapon_pp19_vityaz",
+   "kind": "weapon",
+   "file": "/models/weapon_pp19_vityaz.glb",
+   "bytes": 19980,
+   "triangles": 268,
+   "title": "PP-19-01 Vityaz SMG",
+   "sketchfab": "https://skfb.ly/pPMDw",
+   "scale": 1,
+   "damage": 18,
+   "rpm": 700,
+   "range": 120,
+   "ammo": 30,
+   "mode": "auto",
+   "grip": [
+    0,
+    -0.02,
+    -0.12
+   ]
+  },
+  {
+   "id": "weapon_akmn_rifle",
+   "kind": "weapon",
+   "file": "/models/weapon_akmn_rifle.glb",
+   "bytes": 22224,
+   "triangles": 288,
+   "title": "AKMN Assault Rifle",
+   "sketchfab": "https://skfb.ly/pOJzF",
+   "scale": 1,
+   "damage": 34,
+   "rpm": 600,
+   "range": 220,
+   "ammo": 30,
+   "mode": "auto",
+   "grip": [
+    0,
+    -0.02,
+    -0.12
+   ]
+  },
+  {
+   "id": "ferrari_highpoly",
+   "kind": "vehicle",
+   "file": "/models/ferrari_highpoly.glb",
+   "bytes": 1681572,
+   "title": "Ferrari 488 (three.js sample, detailed)",
+   "sketchfab": null,
+   "upstream": true
+  },
+  {
+   "id": "soldier_rigged",
+   "kind": "npc",
+   "file": "/models/soldier_rigged.glb",
+   "bytes": 2160468,
+   "title": "Soldier (rigged, three.js sample)",
+   "sketchfab": null,
+   "upstream": true
+  },
+  {
+   "id": "xbot_rigged",
+   "kind": "npc",
+   "file": "/models/xbot_rigged.glb",
+   "bytes": 2930032,
+   "title": "Xbot (rigged, three.js sample)",
+   "sketchfab": null,
+   "upstream": true
+  },
+  {
+   "id": "michelle_rigged",
+   "kind": "npc",
+   "file": "/models/michelle_rigged.glb",
+   "bytes": 3276888,
+   "title": "Michelle (rigged, three.js sample)",
+   "sketchfab": null,
+   "upstream": true
+  },
+  {
+   "id": "readyplayer_urban",
+   "kind": "npc",
+   "file": "/models/readyplayer_urban.glb",
+   "bytes": 1838884,
+   "title": "ReadyPlayerMe urban avatar",
+   "sketchfab": null,
+   "upstream": true
+  },
+  {
+   "id": "kira_character",
+   "kind": "npc",
+   "file": "/models/kira_character.glb",
+   "bytes": 983004,
+   "title": "Kira character",
+   "sketchfab": null,
+   "upstream": true
+  },
+  {
+   "id": "cesium_man",
+   "kind": "npc",
+   "file": "/models/cesium_man.glb",
+   "bytes": 438044,
+   "title": "CesiumMan (rigged sample)",
+   "sketchfab": null,
+   "upstream": true
+  },
+  {
+   "id": "cesium_truck",
+   "kind": "vehicle",
+   "file": "/models/cesium_truck.glb",
+   "bytes": 369980,
+   "title": "Cesium Milk Truck",
+   "sketchfab": null,
+   "upstream": true
+  },
+  {
+   "id": "dewoitine_plane",
+   "kind": "aircraft",
+   "file": "/models/dewoitine_plane.glb",
+   "bytes": 3476088,
+   "title": "Dewoitine D520 fighter",
+   "sketchfab": null,
+   "upstream": true
+  },
+  {
+   "id": "collision_world",
+   "kind": "map",
+   "file": "/models/collision_world.glb",
+   "bytes": 94556,
+   "title": "three.js collision test world",
+   "sketchfab": null,
+   "upstream": true
+  }
+ ],
+ "colliders": {
+  "map_los_santos": [
+   {
+    "x": -385,
+    "z": -605,
+    "w": 30.4,
+    "d": 27.8,
+    "h": 8.2,
+    "t": "building"
+   },
+   {
+    "x": -385.9,
+    "z": -614.4,
+    "w": 10.6,
+    "d": 7.8,
+    "h": 8.3,
+    "t": "building"
+   },
+   {
+    "x": -385,
+    "z": -495,
+    "w": 30.9,
+    "d": 20.2,
+    "h": 15.4,
+    "t": "building"
+   },
+   {
+    "x": -393.6,
+    "z": -510.3,
+    "w": 7.2,
+    "d": 9.5,
+    "h": 8.2,
+    "t": "building"
+   },
+   {
+    "x": -385,
+    "z": -385,
+    "w": 26.3,
+    "d": 21.4,
+    "h": 16.1,
+    "t": "building"
+   },
+   {
+    "x": -385,
+    "z": -275,
+    "w": 20.3,
+    "d": 24.1,
+    "h": 13.8,
+    "t": "building"
+   },
+   {
+    "x": -393.5,
+    "z": -275.5,
+    "w": 7,
+    "d": 7.9,
+    "h": 11.6,
+    "t": "building"
+   },
+   {
+    "x": -411.2,
+    "z": -191.2,
+    "w": 7.2,
+    "d": 6.8,
+    "h": 7,
+    "t": "building"
+   },
+   {
+    "x": -362.4,
+    "z": -190.7,
+    "w": 9.2,
+    "d": 9.9,
+    "h": 6.5,
+    "t": "building"
+   },
+   {
+    "x": -408.7,
+    "z": -142.1,
+    "w": 8.2,
+    "d": 8.3,
+    "h": 7.2,
+    "t": "building"
+   },
+   {
+    "x": -359.8,
+    "z": -141.9,
+    "w": 6.9,
+    "d": 9.2,
+    "h": 5.2,
+    "t": "building"
+   },
+   {
+    "x": -410.6,
+    "z": -78.7,
+    "w": 7.5,
+    "d": 8.3,
+    "h": 5.2,
+    "t": "building"
+   },
+   {
+    "x": -360.5,
+    "z": -79.2,
+    "w": 6.7,
+    "d": 6.8,
+    "h": 7.4,
+    "t": "building"
+   },
+   {
+    "x": -410,
+    "z": -31.8,
+    "w": 9,
+    "d": 8.1,
+    "h": 4.2,
+    "t": "building"
+   },
+   {
+    "x": -360,
+    "z": -28.9,
+    "w": 6.7,
+    "d": 9.4,
+    "h": 4.4,
+    "t": "building"
+   },
+   {
+    "x": -408.6,
+    "z": 28.9,
+    "w": 9.1,
+    "d": 7.4,
+    "h": 7.4,
+    "t": "building"
+   },
+   {
+    "x": -361.3,
+    "z": 31.3,
+    "w": 7,
+    "d": 8,
+    "h": 5.3,
+    "t": "building"
+   },
+   {
+    "x": -411.8,
+    "z": 81.1,
+    "w": 6.9,
+    "d": 10,
+    "h": 4.4,
+    "t": "building"
+   },
+   {
+    "x": -360.1,
+    "z": 79.9,
+    "w": 6.9,
+    "d": 9.7,
+    "h": 5.2,
+    "t": "building"
+   },
+   {
+    "x": -410.3,
+    "z": 142,
+    "w": 6.8,
+    "d": 6.8,
+    "h": 6.7,
+    "t": "building"
+   },
+   {
+    "x": -358.5,
+    "z": 140.9,
+    "w": 7.5,
+    "d": 8.7,
+    "h": 4.7,
+    "t": "building"
+   },
+   {
+    "x": -409.7,
+    "z": 191.6,
+    "w": 7.7,
+    "d": 9.7,
+    "h": 4.9,
+    "t": "building"
+   },
+   {
+    "x": -361.6,
+    "z": 190.3,
+    "w": 7.2,
+    "d": 9.8,
+    "h": 5.4,
+    "t": "building"
+   },
+   {
+    "x": -408.2,
+    "z": 249.9,
+    "w": 8.2,
+    "d": 9.2,
+    "h": 7.2,
+    "t": "building"
+   },
+   {
+    "x": -359.5,
+    "z": 248.9,
+    "w": 6.5,
+    "d": 8.9,
+    "h": 6.8,
+    "t": "building"
+   },
+   {
+    "x": -406.1,
+    "z": 299.2,
+    "w": 8.6,
+    "d": 9.6,
+    "h": 7.1,
+    "t": "building"
+   },
+   {
+    "x": -360.3,
+    "z": 301.5,
+    "w": 9.4,
+    "d": 8.1,
+    "h": 6.4,
+    "t": "building"
+   },
+   {
+    "x": -408.8,
+    "z": 358.3,
+    "w": 6.9,
+    "d": 8.5,
+    "h": 7.1,
+    "t": "building"
+   },
+   {
+    "x": -360.1,
+    "z": 359.8,
+    "w": 6.6,
+    "d": 7.8,
+    "h": 7.4,
+    "t": "building"
+   },
+   {
+    "x": -411,
+    "z": 409.8,
+    "w": 8.4,
+    "d": 9.4,
+    "h": 4.2,
+    "t": "building"
+   },
+   {
+    "x": -360,
+    "z": 406.9,
+    "w": 8.6,
+    "d": 9.1,
+    "h": 7.2,
+    "t": "building"
+   },
+   {
+    "x": -407.1,
+    "z": 468.7,
+    "w": 7.1,
+    "d": 7.8,
+    "h": 6.6,
+    "t": "building"
+   },
+   {
+    "x": -359.8,
+    "z": 470,
+    "w": 7.6,
+    "d": 7.1,
+    "h": 6.5,
+    "t": "building"
+   },
+   {
+    "x": -409.5,
+    "z": 519.1,
+    "w": 8.8,
+    "d": 6.7,
+    "h": 6.1,
+    "t": "building"
+   },
+   {
+    "x": -361.9,
+    "z": 517.2,
+    "w": 6.8,
+    "d": 9.9,
+    "h": 5.7,
+    "t": "building"
+   },
+   {
+    "x": -410.4,
+    "z": 582.4,
+    "w": 8.3,
+    "d": 6.7,
+    "h": 6.4,
+    "t": "building"
+   },
+   {
+    "x": -363.4,
+    "z": 581,
+    "w": 7.2,
+    "d": 7.1,
+    "h": 4.4,
+    "t": "building"
+   },
+   {
+    "x": -410.2,
+    "z": 626.5,
+    "w": 6.6,
+    "d": 7.1,
+    "h": 6.1,
+    "t": "building"
+   },
+   {
+    "x": -359.5,
+    "z": 631.3,
+    "w": 9,
+    "d": 8.5,
+    "h": 6.5,
+    "t": "building"
+   },
+   {
+    "x": -275,
+    "z": -605,
+    "w": 21.3,
+    "d": 28.5,
+    "h": 12.9,
+    "t": "building"
+   },
+   {
+    "x": -275,
+    "z": -495,
+    "w": 20.8,
+    "d": 23.6,
+    "h": 16,
+    "t": "building"
+   },
+   {
+    "x": -275,
+    "z": -385,
+    "w": 23.3,
+    "d": 30.3,
+    "h": 8.8,
+    "t": "building"
+   },
+   {
+    "x": -275,
+    "z": -275,
+    "w": 21.4,
+    "d": 28.6,
+    "h": 12.4,
+    "t": "building"
+   },
+   {
+    "x": -281.2,
+    "z": -267.8,
+    "w": 9,
+    "d": 7.2,
+    "h": 8,
+    "t": "building"
+   },
+   {
+    "x": -296.3,
+    "z": -191,
+    "w": 9,
+    "d": 10,
+    "h": 4.8,
+    "t": "building"
+   },
+   {
+    "x": -251.4,
+    "z": -191.5,
+    "w": 8,
+    "d": 9.5,
+    "h": 4.8,
+    "t": "building"
+   },
+   {
+    "x": -296.3,
+    "z": -140.8,
+    "w": 9.4,
+    "d": 8.7,
+    "h": 4.5,
+    "t": "building"
+   },
+   {
+    "x": -248.5,
+    "z": -139.3,
+    "w": 7.5,
+    "d": 7.1,
+    "h": 5,
+    "t": "building"
+   },
+   {
+    "x": -301.4,
+    "z": -81.8,
+    "w": 7.7,
+    "d": 8,
+    "h": 6.3,
+    "t": "building"
+   },
+   {
+    "x": -248.1,
+    "z": -79.9,
+    "w": 8.3,
+    "d": 9,
+    "h": 4.5,
+    "t": "building"
+   },
+   {
+    "x": -300.8,
+    "z": -33.7,
+    "w": 7.9,
+    "d": 9.7,
+    "h": 6.5,
+    "t": "building"
+   },
+   {
+    "x": -251.4,
+    "z": -30.2,
+    "w": 7.1,
+    "d": 9.4,
+    "h": 5.8,
+    "t": "building"
+   },
+   {
+    "x": -299.1,
+    "z": 29.7,
+    "w": 8.5,
+    "d": 7,
+    "h": 4.5,
+    "t": "building"
+   },
+   {
+    "x": -248.8,
+    "z": 28.9,
+    "w": 6.8,
+    "d": 9.2,
+    "h": 6.4,
+    "t": "building"
+   },
+   {
+    "x": -300.7,
+    "z": 78.6,
+    "w": 8.2,
+    "d": 8.6,
+    "h": 4.6,
+    "t": "building"
+   },
+   {
+    "x": -250.2,
+    "z": 79.8,
+    "w": 8.4,
+    "d": 7.6,
+    "h": 4.7,
+    "t": "building"
+   },
+   {
+    "x": -298.5,
+    "z": 139.8,
+    "w": 8.3,
+    "d": 7.6,
+    "h": 4.7,
+    "t": "building"
+   },
+   {
+    "x": -253.7,
+    "z": 139.2,
+    "w": 8.8,
+    "d": 8.5,
+    "h": 7.2,
+    "t": "building"
+   },
+   {
+    "x": -297.9,
+    "z": 190.8,
+    "w": 9.5,
+    "d": 8.7,
+    "h": 6.4,
+    "t": "building"
+   },
+   {
+    "x": -250.3,
+    "z": 189.4,
+    "w": 8.7,
+    "d": 9.3,
+    "h": 4.8,
+    "t": "building"
+   },
+   {
+    "x": -299.4,
+    "z": 250.5,
+    "w": 8.1,
+    "d": 7,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -250.9,
+    "z": 253.2,
+    "w": 6.5,
+    "d": 7.5,
+    "h": 7.3,
+    "t": "building"
+   },
+   {
+    "x": -302,
+    "z": 296.7,
+    "w": 8.1,
+    "d": 7.6,
+    "h": 5.5,
+    "t": "building"
+   },
+   {
+    "x": -252.7,
+    "z": 298.1,
+    "w": 9.5,
+    "d": 8.3,
+    "h": 6.3,
+    "t": "building"
+   },
+   {
+    "x": -296.6,
+    "z": 358.6,
+    "w": 6.7,
+    "d": 10,
+    "h": 5.8,
+    "t": "building"
+   },
+   {
+    "x": -249.2,
+    "z": 358.3,
+    "w": 7.5,
+    "d": 8.7,
+    "h": 4.5,
+    "t": "building"
+   },
+   {
+    "x": -299.5,
+    "z": 408.3,
+    "w": 8.3,
+    "d": 9.2,
+    "h": 7.3,
+    "t": "building"
+   },
+   {
+    "x": -249.8,
+    "z": 410.2,
+    "w": 9.2,
+    "d": 8.2,
+    "h": 5.7,
+    "t": "building"
+   },
+   {
+    "x": -297.4,
+    "z": 471.5,
+    "w": 9.4,
+    "d": 6.8,
+    "h": 4.9,
+    "t": "building"
+   },
+   {
+    "x": -250.4,
+    "z": 472,
+    "w": 8.5,
+    "d": 7.6,
+    "h": 7.1,
+    "t": "building"
+   },
+   {
+    "x": -298.7,
+    "z": 520.6,
+    "w": 9.2,
+    "d": 7.5,
+    "h": 6.1,
+    "t": "building"
+   },
+   {
+    "x": -251,
+    "z": 518.3,
+    "w": 6.8,
+    "d": 8.6,
+    "h": 5.7,
+    "t": "building"
+   },
+   {
+    "x": -297.8,
+    "z": 578.5,
+    "w": 7.6,
+    "d": 8.3,
+    "h": 4.4,
+    "t": "building"
+   },
+   {
+    "x": -249,
+    "z": 579.3,
+    "w": 8,
+    "d": 9.9,
+    "h": 4.8,
+    "t": "building"
+   },
+   {
+    "x": -296.4,
+    "z": 629.2,
+    "w": 6.9,
+    "d": 7.3,
+    "h": 5.9,
+    "t": "building"
+   },
+   {
+    "x": -251.3,
+    "z": 631.1,
+    "w": 8.8,
+    "d": 9.8,
+    "h": 7.4,
+    "t": "building"
+   },
+   {
+    "x": -165,
+    "z": -605,
+    "w": 23.1,
+    "d": 22.2,
+    "h": 12.2,
+    "t": "building"
+   },
+   {
+    "x": -165,
+    "z": -495,
+    "w": 25.9,
+    "d": 29.1,
+    "h": 16.8,
+    "t": "building"
+   },
+   {
+    "x": -152.9,
+    "z": -503.9,
+    "w": 10.8,
+    "d": 7.8,
+    "h": 6.8,
+    "t": "building"
+   },
+   {
+    "x": -165,
+    "z": -385,
+    "w": 28.3,
+    "d": 21.9,
+    "h": 14,
+    "t": "building"
+   },
+   {
+    "x": -165,
+    "z": -275,
+    "w": 20.2,
+    "d": 24.4,
+    "h": 12,
+    "t": "building"
+   },
+   {
+    "x": -189.3,
+    "z": -192,
+    "w": 9.3,
+    "d": 7.4,
+    "h": 7.4,
+    "t": "building"
+   },
+   {
+    "x": -143.7,
+    "z": -188.8,
+    "w": 9.2,
+    "d": 8.2,
+    "h": 6,
+    "t": "building"
+   },
+   {
+    "x": -190.5,
+    "z": -140.9,
+    "w": 7,
+    "d": 10,
+    "h": 5.8,
+    "t": "building"
+   },
+   {
+    "x": -140.5,
+    "z": -140.8,
+    "w": 7.2,
+    "d": 8.9,
+    "h": 4.2,
+    "t": "building"
+   },
+   {
+    "x": -188.1,
+    "z": -76.1,
+    "w": 9.5,
+    "d": 8.7,
+    "h": 6.7,
+    "t": "building"
+   },
+   {
+    "x": -142.4,
+    "z": -80.3,
+    "w": 9.4,
+    "d": 9.6,
+    "h": 4.8,
+    "t": "building"
+   },
+   {
+    "x": -186.2,
+    "z": -30.1,
+    "w": 8.5,
+    "d": 9,
+    "h": 7.4,
+    "t": "building"
+   },
+   {
+    "x": -138.7,
+    "z": -28.7,
+    "w": 9.3,
+    "d": 8,
+    "h": 5,
+    "t": "building"
+   },
+   {
+    "x": -189.6,
+    "z": 32.6,
+    "w": 7.9,
+    "d": 8.6,
+    "h": 6.3,
+    "t": "building"
+   },
+   {
+    "x": -140.8,
+    "z": 29.6,
+    "w": 7.1,
+    "d": 9,
+    "h": 7,
+    "t": "building"
+   },
+   {
+    "x": -191.3,
+    "z": 81.8,
+    "w": 8.3,
+    "d": 7.2,
+    "h": 5.1,
+    "t": "building"
+   },
+   {
+    "x": -139.1,
+    "z": 77.1,
+    "w": 9.1,
+    "d": 8.7,
+    "h": 5.5,
+    "t": "building"
+   },
+   {
+    "x": -189.9,
+    "z": 138.3,
+    "w": 7.3,
+    "d": 9,
+    "h": 6.6,
+    "t": "building"
+   },
+   {
+    "x": -139.5,
+    "z": 143.6,
+    "w": 7.3,
+    "d": 9.9,
+    "h": 4.8,
+    "t": "building"
+   },
+   {
+    "x": -187.7,
+    "z": 188.5,
+    "w": 7.5,
+    "d": 9.6,
+    "h": 4.5,
+    "t": "building"
+   },
+   {
+    "x": -139.4,
+    "z": 188.6,
+    "w": 8.8,
+    "d": 9.6,
+    "h": 5.6,
+    "t": "building"
+   },
+   {
+    "x": -186.8,
+    "z": 250.4,
+    "w": 8,
+    "d": 9.6,
+    "h": 5,
+    "t": "building"
+   },
+   {
+    "x": -140.1,
+    "z": 248.2,
+    "w": 8.6,
+    "d": 7.1,
+    "h": 6.7,
+    "t": "building"
+   },
+   {
+    "x": -188.1,
+    "z": 296.1,
+    "w": 9.2,
+    "d": 7.9,
+    "h": 4.7,
+    "t": "building"
+   },
+   {
+    "x": -143.6,
+    "z": 296.4,
+    "w": 7.2,
+    "d": 9.3,
+    "h": 5.8,
+    "t": "building"
+   },
+   {
+    "x": -192,
+    "z": 361.6,
+    "w": 9.2,
+    "d": 7,
+    "h": 6.1,
+    "t": "building"
+   },
+   {
+    "x": -143.1,
+    "z": 361.3,
+    "w": 7.1,
+    "d": 7.8,
+    "h": 4.4,
+    "t": "building"
+   },
+   {
+    "x": -186.2,
+    "z": 408.6,
+    "w": 7.1,
+    "d": 9.4,
+    "h": 6.5,
+    "t": "building"
+   },
+   {
+    "x": -142.3,
+    "z": 411.7,
+    "w": 8.3,
+    "d": 6.6,
+    "h": 6.9,
+    "t": "building"
+   },
+   {
+    "x": -189.6,
+    "z": 468.4,
+    "w": 9.4,
+    "d": 7.7,
+    "h": 6.4,
+    "t": "building"
+   },
+   {
+    "x": -140.6,
+    "z": 468.4,
+    "w": 8,
+    "d": 8.9,
+    "h": 4.5,
+    "t": "building"
+   },
+   {
+    "x": -188.8,
+    "z": 517.4,
+    "w": 7.6,
+    "d": 9.9,
+    "h": 6.3,
+    "t": "building"
+   },
+   {
+    "x": -140.1,
+    "z": 517.7,
+    "w": 8.5,
+    "d": 7.8,
+    "h": 7.4,
+    "t": "building"
+   },
+   {
+    "x": -189.5,
+    "z": 582.1,
+    "w": 7.3,
+    "d": 7,
+    "h": 6.9,
+    "t": "building"
+   },
+   {
+    "x": -141.8,
+    "z": 581.8,
+    "w": 8.2,
+    "d": 7.6,
+    "h": 5.9,
+    "t": "building"
+   },
+   {
+    "x": -187,
+    "z": 627.7,
+    "w": 7.1,
+    "d": 9.9,
+    "h": 5,
+    "t": "building"
+   },
+   {
+    "x": -143.1,
+    "z": 627.7,
+    "w": 7.3,
+    "d": 6.7,
+    "h": 4.9,
+    "t": "building"
+   },
+   {
+    "x": -55,
+    "z": -605,
+    "w": 21.5,
+    "d": 22.9,
+    "h": 10.5,
+    "t": "building"
+   },
+   {
+    "x": -55,
+    "z": -495,
+    "w": 30.4,
+    "d": 21.4,
+    "h": 13.6,
+    "t": "building"
+   },
+   {
+    "x": -55,
+    "z": -385,
+    "w": 27.5,
+    "d": 20.6,
+    "h": 8.5,
+    "t": "building"
+   },
+   {
+    "x": -55,
+    "z": -275,
+    "w": 30.2,
+    "d": 22.1,
+    "h": 16.5,
+    "t": "building"
+   },
+   {
+    "x": -57.3,
+    "z": -285.6,
+    "w": 10,
+    "d": 7.9,
+    "h": 9.6,
+    "t": "building"
+   },
+   {
+    "x": -81.1,
+    "z": -191.3,
+    "w": 7.1,
+    "d": 9.7,
+    "h": 4.9,
+    "t": "building"
+   },
+   {
+    "x": -31.5,
+    "z": -189.2,
+    "w": 7.6,
+    "d": 8.1,
+    "h": 6.9,
+    "t": "building"
+   },
+   {
+    "x": -79.5,
+    "z": -143.5,
+    "w": 8.9,
+    "d": 6.6,
+    "h": 6.5,
+    "t": "building"
+   },
+   {
+    "x": -29.7,
+    "z": -142.9,
+    "w": 8.2,
+    "d": 7.9,
+    "h": 5.9,
+    "t": "building"
+   },
+   {
+    "x": -81.8,
+    "z": -78.8,
+    "w": 8.9,
+    "d": 8.6,
+    "h": 5.3,
+    "t": "building"
+   },
+   {
+    "x": -29.1,
+    "z": -77.4,
+    "w": 7.2,
+    "d": 6.7,
+    "h": 6.2,
+    "t": "building"
+   },
+   {
+    "x": -81.3,
+    "z": -33.3,
+    "w": 7.2,
+    "d": 9,
+    "h": 5.6,
+    "t": "building"
+   },
+   {
+    "x": -32.2,
+    "z": -30,
+    "w": 7.3,
+    "d": 7.4,
+    "h": 5.7,
+    "t": "building"
+   },
+   {
+    "x": -81.9,
+    "z": 28.9,
+    "w": 8,
+    "d": 7.4,
+    "h": 5.5,
+    "t": "building"
+   },
+   {
+    "x": -29.7,
+    "z": 30.3,
+    "w": 8.9,
+    "d": 7.4,
+    "h": 7,
+    "t": "building"
+   },
+   {
+    "x": -81.4,
+    "z": 81.3,
+    "w": 8.6,
+    "d": 8.9,
+    "h": 6.3,
+    "t": "building"
+   },
+   {
+    "x": -28.9,
+    "z": 79.6,
+    "w": 7,
+    "d": 8.7,
+    "h": 5.5,
+    "t": "building"
+   },
+   {
+    "x": -77.8,
+    "z": 138.9,
+    "w": 6.9,
+    "d": 8.5,
+    "h": 4.7,
+    "t": "building"
+   },
+   {
+    "x": -33.5,
+    "z": 140.9,
+    "w": 6.8,
+    "d": 6.6,
+    "h": 4.5,
+    "t": "building"
+   },
+   {
+    "x": -80.9,
+    "z": 189.8,
+    "w": 6.9,
+    "d": 8.5,
+    "h": 7.3,
+    "t": "building"
+   },
+   {
+    "x": -28.1,
+    "z": 188,
+    "w": 8.8,
+    "d": 9.1,
+    "h": 7.3,
+    "t": "building"
+   },
+   {
+    "x": -81.6,
+    "z": 251.9,
+    "w": 7.6,
+    "d": 7.6,
+    "h": 6.6,
+    "t": "building"
+   },
+   {
+    "x": -32.5,
+    "z": 251.1,
+    "w": 7.7,
+    "d": 9.2,
+    "h": 5.9,
+    "t": "building"
+   },
+   {
+    "x": -79.3,
+    "z": 299.7,
+    "w": 8.6,
+    "d": 8.7,
+    "h": 5.5,
+    "t": "building"
+   },
+   {
+    "x": -31.8,
+    "z": 298,
+    "w": 7.9,
+    "d": 9.3,
+    "h": 7.4,
+    "t": "building"
+   },
+   {
+    "x": -81.2,
+    "z": 362.6,
+    "w": 9.4,
+    "d": 7.5,
+    "h": 5.1,
+    "t": "building"
+   },
+   {
+    "x": -28.3,
+    "z": 361.1,
+    "w": 8,
+    "d": 7.8,
+    "h": 6.2,
+    "t": "building"
+   },
+   {
+    "x": -80.5,
+    "z": 407.8,
+    "w": 9.2,
+    "d": 7.1,
+    "h": 7.3,
+    "t": "building"
+   },
+   {
+    "x": -33,
+    "z": 408.8,
+    "w": 8.9,
+    "d": 7.4,
+    "h": 6.2,
+    "t": "building"
+   },
+   {
+    "x": -77.7,
+    "z": 473.8,
+    "w": 8,
+    "d": 7,
+    "h": 6.1,
+    "t": "building"
+   },
+   {
+    "x": -32.2,
+    "z": 471.8,
+    "w": 7.7,
+    "d": 9.4,
+    "h": 6.7,
+    "t": "building"
+   },
+   {
+    "x": -80.4,
+    "z": 518.3,
+    "w": 6.6,
+    "d": 9.4,
+    "h": 5.3,
+    "t": "building"
+   },
+   {
+    "x": -28.8,
+    "z": 521,
+    "w": 6.8,
+    "d": 6.5,
+    "h": 7.2,
+    "t": "building"
+   },
+   {
+    "x": -78.1,
+    "z": 581.4,
+    "w": 7.6,
+    "d": 6.6,
+    "h": 5,
+    "t": "building"
+   },
+   {
+    "x": -28.7,
+    "z": 583.8,
+    "w": 8.4,
+    "d": 9.2,
+    "h": 4.3,
+    "t": "building"
+   },
+   {
+    "x": -76.3,
+    "z": 628.1,
+    "w": 6.5,
+    "d": 8.5,
+    "h": 7.2,
+    "t": "building"
+   },
+   {
+    "x": -30.6,
+    "z": 626.6,
+    "w": 7.5,
+    "d": 9,
+    "h": 6.5,
+    "t": "building"
+   },
+   {
+    "x": 55,
+    "z": -605,
+    "w": 27.3,
+    "d": 22.5,
+    "h": 11.7,
+    "t": "building"
+   },
+   {
+    "x": 56.1,
+    "z": -617,
+    "w": 7.9,
+    "d": 10.7,
+    "h": 7.6,
+    "t": "building"
+   },
+   {
+    "x": 55,
+    "z": -495,
+    "w": 29.5,
+    "d": 27.4,
+    "h": 17.7,
+    "t": "building"
+   },
+   {
+    "x": 52.5,
+    "z": -482.9,
+    "w": 9.1,
+    "d": 7.1,
+    "h": 6.6,
+    "t": "building"
+   },
+   {
+    "x": 55,
+    "z": -385,
+    "w": 23,
+    "d": 29.7,
+    "h": 14.3,
+    "t": "building"
+   },
+   {
+    "x": 55,
+    "z": -275,
+    "w": 24.3,
+    "d": 20.8,
+    "h": 13.1,
+    "t": "building"
+   },
+   {
+    "x": 33,
+    "z": -187,
+    "w": 16.7,
+    "d": 12.2,
+    "h": 33.6,
+    "t": "building"
+   },
+   {
+    "x": 77,
+    "z": -143,
+    "w": 12.2,
+    "d": 11.2,
+    "h": 32.4,
+    "t": "building"
+   },
+   {
+    "x": 33,
+    "z": -77,
+    "w": 12.1,
+    "d": 14,
+    "h": 25.3,
+    "t": "building"
+   },
+   {
+    "x": 77,
+    "z": -33,
+    "w": 11.9,
+    "d": 13.9,
+    "h": 17.3,
+    "t": "building"
+   },
+   {
+    "x": 55,
+    "z": 55,
+    "w": 22.4,
+    "d": 23.3,
+    "h": 96.6,
+    "t": "building"
+   },
+   {
+    "x": 33,
+    "z": 143,
+    "w": 14,
+    "d": 14.9,
+    "h": 32.2,
+    "t": "building"
+   },
+   {
+    "x": 77,
+    "z": 187,
+    "w": 13,
+    "d": 14.7,
+    "h": 29.1,
+    "t": "building"
+   },
+   {
+    "x": 55,
+    "z": 275,
+    "w": 16.3,
+    "d": 15.3,
+    "h": 51.3,
+    "t": "building"
+   },
+   {
+    "x": 55,
+    "z": 385,
+    "w": 20,
+    "d": 20.6,
+    "h": 49.2,
+    "t": "building"
+   },
+   {
+    "x": 55,
+    "z": 495,
+    "w": 18.1,
+    "d": 18.2,
+    "h": 41.9,
+    "t": "building"
+   },
+   {
+    "x": 33,
+    "z": 583,
+    "w": 14.9,
+    "d": 14.5,
+    "h": 30.3,
+    "t": "building"
+   },
+   {
+    "x": 77,
+    "z": 627,
+    "w": 14.2,
+    "d": 11.9,
+    "h": 16.4,
+    "t": "building"
+   },
+   {
+    "x": 165,
+    "z": -605,
+    "w": 28.2,
+    "d": 23.8,
+    "h": 10.2,
+    "t": "building"
+   },
+   {
+    "x": 165,
+    "z": -495,
+    "w": 29.4,
+    "d": 20.4,
+    "h": 16.1,
+    "t": "building"
+   },
+   {
+    "x": 165.7,
+    "z": -491.3,
+    "w": 7.8,
+    "d": 8.8,
+    "h": 6.8,
+    "t": "building"
+   },
+   {
+    "x": 165,
+    "z": -385,
+    "w": 25.2,
+    "d": 22.2,
+    "h": 8.2,
+    "t": "building"
+   },
+   {
+    "x": 165,
+    "z": -275,
+    "w": 24.2,
+    "d": 24.5,
+    "h": 15.7,
+    "t": "building"
+   },
+   {
+    "x": 159.6,
+    "z": -283.5,
+    "w": 10.8,
+    "d": 9.1,
+    "h": 8.1,
+    "t": "building"
+   },
+   {
+    "x": 165,
+    "z": -165,
+    "w": 18.7,
+    "d": 15,
+    "h": 94.6,
+    "t": "building"
+   },
+   {
+    "x": 165,
+    "z": -55,
+    "w": 19.9,
+    "d": 26,
+    "h": 112.5,
+    "t": "building"
+   },
+   {
+    "x": 165,
+    "z": 55,
+    "w": 23.1,
+    "d": 19.2,
+    "h": 91.9,
+    "t": "building"
+   },
+   {
+    "x": 143,
+    "z": 143,
+    "w": 13.7,
+    "d": 15.7,
+    "h": 29.6,
+    "t": "building"
+   },
+   {
+    "x": 187,
+    "z": 187,
+    "w": 15.5,
+    "d": 12.9,
+    "h": 26.1,
+    "t": "building"
+   },
+   {
+    "x": 165,
+    "z": 275,
+    "w": 19.5,
+    "d": 18.7,
+    "h": 50.3,
+    "t": "building"
+   },
+   {
+    "x": 143,
+    "z": 363,
+    "w": 16.2,
+    "d": 12.5,
+    "h": 27.7,
+    "t": "building"
+   },
+   {
+    "x": 187,
+    "z": 407,
+    "w": 12.7,
+    "d": 13.6,
+    "h": 18.2,
+    "t": "building"
+   },
+   {
+    "x": 165,
+    "z": 495,
+    "w": 24.9,
+    "d": 21.3,
+    "h": 49.8,
+    "t": "building"
+   },
+   {
+    "x": 143,
+    "z": 583,
+    "w": 14.4,
+    "d": 11.8,
+    "h": 22,
+    "t": "building"
+   },
+   {
+    "x": 187,
+    "z": 627,
+    "w": 15.8,
+    "d": 12.8,
+    "h": 33,
+    "t": "building"
+   },
+   {
+    "x": 275,
+    "z": -605,
+    "w": 27.3,
+    "d": 24.9,
+    "h": 12.8,
+    "t": "building"
+   },
+   {
+    "x": 274.8,
+    "z": -616.7,
+    "w": 9.1,
+    "d": 7.4,
+    "h": 7.1,
+    "t": "building"
+   },
+   {
+    "x": 275,
+    "z": -495,
+    "w": 28.8,
+    "d": 30.9,
+    "h": 9.9,
+    "t": "building"
+   },
+   {
+    "x": 275,
+    "z": -385,
+    "w": 30.6,
+    "d": 25.1,
+    "h": 12,
+    "t": "building"
+   },
+   {
+    "x": 275,
+    "z": -275,
+    "w": 24.9,
+    "d": 30.3,
+    "h": 15.6,
+    "t": "building"
+   },
+   {
+    "x": 267.7,
+    "z": -276.1,
+    "w": 7.2,
+    "d": 9.8,
+    "h": 11.8,
+    "t": "building"
+   },
+   {
+    "x": 275,
+    "z": -165,
+    "w": 15.4,
+    "d": 15.8,
+    "h": 120.4,
+    "t": "building"
+   },
+   {
+    "x": 275,
+    "z": -55,
+    "w": 17.4,
+    "d": 25.4,
+    "h": 104.7,
+    "t": "building"
+   },
+   {
+    "x": 253,
+    "z": 33,
+    "w": 14.3,
+    "d": 11.9,
+    "h": 16.2,
+    "t": "building"
+   },
+   {
+    "x": 297,
+    "z": 77,
+    "w": 16.8,
+    "d": 12.3,
+    "h": 33.1,
+    "t": "building"
+   },
+   {
+    "x": 275,
+    "z": 165,
+    "w": 20.2,
+    "d": 17,
+    "h": 60.4,
+    "t": "building"
+   },
+   {
+    "x": 385,
+    "z": -605,
+    "w": 26.8,
+    "d": 20.8,
+    "h": 15.7,
+    "t": "building"
+   },
+   {
+    "x": 385,
+    "z": -495,
+    "w": 24.7,
+    "d": 29.7,
+    "h": 13.7,
+    "t": "building"
+   },
+   {
+    "x": 385.1,
+    "z": -489.3,
+    "w": 8,
+    "d": 8.6,
+    "h": 9.3,
+    "t": "building"
+   },
+   {
+    "x": 385,
+    "z": -385,
+    "w": 30.6,
+    "d": 26.4,
+    "h": 17.2,
+    "t": "building"
+   },
+   {
+    "x": 392.8,
+    "z": -397.9,
+    "w": 10,
+    "d": 10.6,
+    "h": 11.6,
+    "t": "building"
+   },
+   {
+    "x": 385,
+    "z": -275,
+    "w": 26.9,
+    "d": 20.3,
+    "h": 13.5,
+    "t": "building"
+   },
+   {
+    "x": 363,
+    "z": -187,
+    "w": 11.6,
+    "d": 14,
+    "h": 33.2,
+    "t": "building"
+   },
+   {
+    "x": 407,
+    "z": -143,
+    "w": 12.6,
+    "d": 11.1,
+    "h": 17.2,
+    "t": "building"
+   },
+   {
+    "x": 385,
+    "z": -55,
+    "w": 16.7,
+    "d": 25.4,
+    "h": 122.7,
+    "t": "building"
+   },
+   {
+    "x": 385,
+    "z": 55,
+    "w": 22,
+    "d": 24.6,
+    "h": 81.3,
+    "t": "building"
+   },
+   {
+    "x": 363,
+    "z": 143,
+    "w": 12.6,
+    "d": 16.7,
+    "h": 28.3,
+    "t": "building"
+   },
+   {
+    "x": 407,
+    "z": 187,
+    "w": 15.3,
+    "d": 11.3,
+    "h": 26.4,
+    "t": "building"
+   },
+   {
+    "x": 495,
+    "z": -605,
+    "w": 21.4,
+    "d": 25.4,
+    "h": 17.1,
+    "t": "building"
+   },
+   {
+    "x": 495,
+    "z": -495,
+    "w": 24.9,
+    "d": 25.7,
+    "h": 9.9,
+    "t": "building"
+   },
+   {
+    "x": 495,
+    "z": -385,
+    "w": 20.5,
+    "d": 25.9,
+    "h": 11.5,
+    "t": "building"
+   },
+   {
+    "x": 500.5,
+    "z": -375.9,
+    "w": 8.5,
+    "d": 10.5,
+    "h": 8.2,
+    "t": "building"
+   },
+   {
+    "x": 495,
+    "z": -275,
+    "w": 24.8,
+    "d": 22.6,
+    "h": 16,
+    "t": "building"
+   },
+   {
+    "x": 496.3,
+    "z": -278,
+    "w": 8.5,
+    "d": 8.2,
+    "h": 7.9,
+    "t": "building"
+   },
+   {
+    "x": 495,
+    "z": -165,
+    "w": 15.8,
+    "d": 25.6,
+    "h": 96.1,
+    "t": "building"
+   },
+   {
+    "x": 495,
+    "z": -55,
+    "w": 16.2,
+    "d": 22.8,
+    "h": 111,
+    "t": "building"
+   },
+   {
+    "x": 495,
+    "z": 55,
+    "w": 19.8,
+    "d": 23.1,
+    "h": 82.7,
+    "t": "building"
+   },
+   {
+    "x": 495,
+    "z": 165,
+    "w": 25.9,
+    "d": 18.1,
+    "h": 71.6,
+    "t": "building"
+   },
+   {
+    "x": 605,
+    "z": -605,
+    "w": 30.4,
+    "d": 24.5,
+    "h": 17.7,
+    "t": "building"
+   },
+   {
+    "x": 605,
+    "z": -385,
+    "w": 23.7,
+    "d": 27.7,
+    "h": 10.6,
+    "t": "building"
+   },
+   {
+    "x": 613.8,
+    "z": -383.2,
+    "w": 9.7,
+    "d": 10.8,
+    "h": 11.7,
+    "t": "building"
+   },
+   {
+    "x": 605,
+    "z": -275,
+    "w": 29.4,
+    "d": 30,
+    "h": 15.1,
+    "t": "building"
+   },
+   {
+    "x": 598.1,
+    "z": -271.7,
+    "w": 10.7,
+    "d": 9.5,
+    "h": 8.8,
+    "t": "building"
+   },
+   {
+    "x": 583,
+    "z": -187,
+    "w": 11.6,
+    "d": 12.7,
+    "h": 30.7,
+    "t": "building"
+   },
+   {
+    "x": 627,
+    "z": -143,
+    "w": 15.2,
+    "d": 15.5,
+    "h": 20.3,
+    "t": "building"
+   },
+   {
+    "x": 583,
+    "z": -77,
+    "w": 13.9,
+    "d": 16.9,
+    "h": 31.7,
+    "t": "building"
+   },
+   {
+    "x": 627,
+    "z": -33,
+    "w": 11.9,
+    "d": 16,
+    "h": 13.3,
+    "t": "building"
+   },
+   {
+    "x": 605,
+    "z": 55,
+    "w": 19.4,
+    "d": 20,
+    "h": 87.9,
+    "t": "building"
+   },
+   {
+    "x": 605,
+    "z": 165,
+    "w": 18.4,
+    "d": 19.2,
+    "h": 59.6,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -648,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -588,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -528,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -468,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -408,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -348,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -288,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -228,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -168,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -108,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": -48,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 12,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 72,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 132,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 192,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 252,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 312,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 372,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 432,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 492,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 552,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": -466,
+    "z": 612,
+    "w": 2,
+    "d": 2,
+    "h": 3.4,
+    "t": "building"
+   },
+   {
+    "x": 644.7,
+    "z": 46.1,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 605.6,
+    "z": 225.9,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 517.4,
+    "z": 387.3,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 387.3,
+    "z": 517.4,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 225.9,
+    "z": 605.6,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 46.1,
+    "z": 644.7,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -137.4,
+    "z": 631.6,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -309.8,
+    "z": 567.3,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -457,
+    "z": 457,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -567.3,
+    "z": 309.8,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -631.6,
+    "z": 137.4,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -644.7,
+    "z": -46.1,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -605.6,
+    "z": -225.9,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -517.4,
+    "z": -387.3,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -387.3,
+    "z": -517.4,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -225.9,
+    "z": -605.6,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": -46.1,
+    "z": -644.7,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 137.4,
+    "z": -631.6,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 309.8,
+    "z": -567.3,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 457,
+    "z": -457,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 567.3,
+    "z": -309.8,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 631.6,
+    "z": -137.4,
+    "w": 1.9,
+    "d": 1.9,
+    "h": 7.5,
+    "t": "building"
+   },
+   {
+    "x": 180,
+    "z": 151,
+    "w": 35,
+    "d": 23,
+    "h": 16,
+    "t": "building"
+   },
+   {
+    "x": 270,
+    "z": 191,
+    "w": 4.2,
+    "d": 4.2,
+    "h": 34,
+    "t": "building"
+   },
+   {
+    "x": -400,
+    "z": -370,
+    "w": 8,
+    "d": 8,
+    "h": 30,
+    "t": "building"
+   }
+  ]
+ }
+}
