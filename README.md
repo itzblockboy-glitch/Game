@@ -14,6 +14,13 @@ npm start            # http://localhost:3000  (serve dist/ + public/)
 
 Open the URL on your phone (same Wi-Fi, use `http://<lan-ip>:3000`) for the touch build.
 
+![Spawn view](docs/screenshots/spawn.jpg)
+![Downtown skyline](docs/screenshots/skyline.jpg)
+
+| Sketchfab asset hub | Phone / touch build |
+|---|---|
+| ![Asset hub](docs/screenshots/asset-hub.jpg) | ![Mobile](docs/screenshots/mobile.jpg) |
+
 ---
 
 ## The 28 GLB assets
