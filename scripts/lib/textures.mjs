@@ -172,22 +172,35 @@ export const texRoof = () =>
     return tile ? [base - 42, base - 46, base - 50] : [base, base - 6, base - 14];
   });
 
-export const texSand = () =>
-  make((x, y) => {
-    const rip = Math.sin(((x + Math.sin((y / SIZE) * Math.PI * 2) * 6) / SIZE) * Math.PI * 12) * 8;
-    const n = pixel(fA, x, y) * 18;
-    return [228 + rip + n * 0.4, 206 + rip + n * 0.4, 158 + rip + n * 0.3];
+export const texSand = () => {
+  // three octaves: wind ripples + coarse grain + per-grain speckle
+  const g0 = fbm(SIZE, 61), g1 = fbm(SIZE, 97);
+  return make((x, y) => {
+    const rip = Math.sin(((x + Math.sin((y / SIZE) * Math.PI * 2) * 9) / SIZE) * Math.PI * 22) * 6;
+    const coarse = pixel(fA, x + 40, y + 11) * 22;
+    const speck = pixel(g0, x * 2, y * 2) * 16 + pixel(g1, x * 3, y * 3) * 10;
+    return [206 + rip + coarse * 0.5 + speck, 186 + rip + coarse * 0.46 + speck * 0.92, 142 + rip + coarse * 0.4 + speck * 0.74];
   });
+};
 
-export const texGrass = () =>
-  make((x, y) => {
-    // fine blade structure: high-frequency periodic noise + a soft macro tint
+export const texGrass = () => {
+  // layered: macro patches, mid clumps, and single-pixel blade strokes
+  const m1 = fbm(SIZE, 11), m2 = fbm(SIZE, 29);
+  return make((x, y) => {
     const macro = pixel(fA, x, y);
+    const mid = pixel(m1, x, y);
     const micro = pixel(fC, x, y);
-    const blade = micro > 0.58 ? 1 : 0;
-    const v = 0.62 + macro * 0.26 + micro * 0.3;
-    return [96 * v + blade * 34, 132 * v + blade * 42, 72 * v + blade * 22];
+    const blade = pixel(m2, x * 2, y * 2) > 0.55 ? 1 : 0;
+    // damp/shadow patches read as uneven lawn rather than a flat green plate
+    const damp = pixel(m2, x + 64, y + 32);
+    const v = 0.5 + macro * 0.3 + mid * 0.14 + micro * 0.22 - damp * 0.1;
+    return [
+      88 * v + blade * 30 + damp * 8,
+      124 * v + blade * 40 + macro * 10,
+      62 * v + blade * 18 + damp * 6,
+    ];
   });
+};
 
 export const TEX = {
   facade: texFacade,

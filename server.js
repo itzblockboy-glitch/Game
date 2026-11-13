@@ -42,6 +42,10 @@ app.use('/draco', (req, res, next) => {
   next();
 });
 
+// dev tooling (model studio) — only when running the source checkout
+app.use('/vendor', express.static(path.join(__dirname, 'src/vendor'), { maxAge: '1h' }));
+app.use('/dev', express.static(path.join(__dirname, 'scripts/dev/glbstudio'), { maxAge: '0' }));
+
 if (hasDist) app.use(express.static(DIST, { maxAge: '1h', extensions: ['html'] }));
 app.use(express.static(PUBLIC, { maxAge: '1h' }));
 

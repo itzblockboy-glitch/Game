@@ -103,7 +103,30 @@ A room with 4 players therefore costs roughly **~10 kbit/s** of game traffic in 
 * Baked vertex lighting + one shadow-casting sun with a tight 116 m shadow frustum.
 * Static AABB colliders (273 boxes) + a spatial hash instead of raycasting the world.
 * Adaptive resolution: the renderer drops to 0.62× pixel ratio on weak GPUs to hold 60 fps.
-* Quality presets: Performance / Balanced / High (`MENU → Graphics`).
+* Quality presets: Performance / Balanced / Cinematic (`MENU → Graphics`) — each drives
+  MSAA, bloom strength and HDR render-target samples.
+* HDR forward pass → EffectComposer (UnrealBloom + ACES OutputPass + a grade pass with
+  vignette, film grain and warmth), so the look is filmic rather than flat-shaded cartoon.
+* Pooled GPU particle VFX (smoke, sparks, debris, rain, lightning, skid marks, shockwaves)
+  and a procedural WebAudio layer (engines per vehicle type, tyre/impact/footstep foley,
+  sirens, adaptive music).
+
+## Android APK
+
+```bash
+npm run android:setup   # fetches aapt2 + android.jar + smali (+ a JRE if needed) into tools/android/
+npm run build           # produces dist/ — the APK embeds this whole tree
+npm run apk             # → release/LosSantos-1.0.0.apk  (signed with APK Signature Scheme v2)
+```
+
+The APK is a thin, hardware-accelerated WebView host (`android/smali/…`) that serves the
+bundled `dist/` build from a virtual `https://appassets.androidplatform.net/assets/game/`
+origin — required because Chromium refuses `fetch()` on `file://`, which the game needs for
+its glTF models. Everything ships inside the APK, so it plays fully offline; multiplayer and
+WebRTC voice connect when the device is online. No Android SDK is involved: `aapt2` links the
+resources, `smali` assembles the DEX, and the v2 signature is produced in node from a
+self-signed RSA-2048 key (generated once into `tools/android/keys/`). Verify with any
+`apksigner verify` / `apksigtool verify`.
 
 ## Architecture
 
@@ -111,7 +134,8 @@ A room with 4 players therefore costs roughly **~10 kbit/s** of game traffic in 
 index.html            shell (native ES modules + import map-free relative vendor files)
 src/main.js           boot, input, camera, weapons, traffic, HUD wiring, main loop
 src/world.js          sky shader, ocean shader, sun/moon cycle, chunk culling, colliders
-src/character.js      rigid-part character rig, procedural walk/run/jump/swim/punch, weapons
+src/character.js      character rig: rigid-part procedural cycle, plus SkeletonUtils-driven
+                      bone retargeting for real rigged GLBs (idle/walk/run/jump/aim)
 src/vehicles.js       arcade car/truck physics, aircraft, rotors, sirens
 src/assets.js         GLB loading, IndexedDB cache, instancing, hot-swap
 src/network.js        binary state/snapshot codec, room lifecycle, ping

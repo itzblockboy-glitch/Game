@@ -514,25 +514,48 @@ export function buildCity() {
 }
 
 function addPalm(M, x, z, scale, mTrunk, mLeaf, chunkName) {
-  const h = 7.5 * scale;
+  const h = 8.5 * scale;
   if (chunkName) M.use(chunkName);
   else M.addNode(`${Math.round(x / 220)}_palm_${Math.round(z / 220)}`);
-  // slightly leaning trunk made of 3 tapered segments
-  M.add(cylinderGeo(0.22 * scale, 0.34 * scale, h * 0.5, 5, [0.36, 0.26, 0.16], mat({ pos: [0, h * 0.25, 0], rot: [0.04, 0, 0.05] })), mTrunk);
-  M.add(cylinderGeo(0.16 * scale, 0.22 * scale, h * 0.55, 5, [0.4, 0.29, 0.18], mat({ pos: [0.16 * scale, h * 0.72, 0], rot: [0.05, 0, 0.1] })), mTrunk);
-  const topX = 0.3 * scale;
-  const topY = h;
-  // coconut cluster
-  M.add(sphereGeo(0.26 * scale, 5, 3, [0.28, 0.2, 0.12], mat({ pos: [topX, topY - 0.22 * scale, 0] })), mTrunk);
-  // fronds
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    const droop = 0.42 + (i % 3) * 0.06;
-    M.add(prismGeo([
-      [0, 0], [3.4 * scale, -0.9 * scale], [3.0 * scale, -1.5 * scale], [0.1 * scale, -0.5 * scale],
-    ], 0.14 * scale, [0.19 + (i % 2) * 0.04, 0.42 + (i % 2) * 0.06, 0.18], mat({ pos: [topX, topY, 0], rot: [0, a, droop] })), mLeaf);
+  // curved trunk: 6 tapered segments with a slight S-curve, ringed bark
+  const segs = 6;
+  const lean = 0.55 * scale;
+  let px = 0;
+  for (let i = 0; i < segs; i++) {
+    const t = i / segs, t2 = (i + 1) / segs;
+    const y0 = h * t, y1 = h * t2;
+    const bend = Math.pow(t, 1.7);
+    const r0 = (0.3 - 0.16 * t) * scale;
+    const r1 = (0.3 - 0.16 * t2) * scale;
+    const cx = lean * bend;
+    const facing = Math.atan2(lean, h) * 0.6;
+    M.add(cylinderGeo(r1, r0, y1 - y0 + 0.02, 9, [0.33 + t * 0.08, 0.24 + t * 0.06, 0.15 + t * 0.03],
+      mat({ pos: [cx, (y0 + y1) / 2, 0], rot: [0, 0, -facing] })), mTrunk);
   }
-  M.add(sphereGeo(0.3 * scale, 5, 3, [0.24, 0.4, 0.18], mat({ pos: [topX, topY, 0] })), mLeaf);
+  const topX = lean;
+  const topY = h;
+  // crown: coconut cluster + 11 arcing fronds in 2 rings for a full canopy
+  M.add(sphereGeo(0.3 * scale, 7, 4, [0.26, 0.19, 0.11], mat({ pos: [topX, topY - 0.3 * scale, 0] })), mTrunk);
+  const rings = [
+    { n: 7, len: 3.9, droop: 0.5, y: 0.06, shade: 0 },
+    { n: 5, len: 3.0, droop: 0.92, y: -0.12, shade: 1 },
+  ];
+  for (const ring of rings) {
+    for (let i = 0; i < ring.n; i++) {
+      const a = (i / ring.n) * Math.PI * 2 + (ring.shade ? Math.PI / ring.n : 0);
+      const L = ring.len * scale;
+      const g = ring.shade ? [0.15, 0.34, 0.14] : [0.2 + (i % 2) * 0.05, 0.45 + (i % 2) * 0.05, 0.18];
+      // leaf blade: a curved quad prism with a raised midrib
+      M.add(prismGeo([
+        [0, 0], [L * 0.35, L * 0.16], [L * 0.75, L * 0.1], [L, -L * 0.06],
+        [L * 0.72, -L * 0.16], [L * 0.35, -L * 0.14], [0, -0.04 * scale],
+      ], 0.06 * scale, g, mat({ pos: [topX, topY + ring.y * scale, 0], rot: [0, a, -ring.droop] })), mLeaf);
+      // frond stem
+      M.add(cylinderGeo(0.02 * scale, 0.035 * scale, L * 0.9, 4, [0.24, 0.3, 0.14],
+        mat({ pos: [topX + Math.cos(a) * L * 0.42, topY + ring.y * scale - L * 0.12, -Math.sin(a) * L * 0.42], rot: [Math.PI / 2 - ring.droop, 0, a] })), mLeaf);
+    }
+  }
+  M.add(sphereGeo(0.34 * scale, 7, 4, [0.2, 0.36, 0.16], mat({ pos: [topX, topY, 0] })), mLeaf);
 }
 
 // ================================================================ stunt park

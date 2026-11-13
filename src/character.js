@@ -5,6 +5,53 @@
 import * as THREE from 'three';
 import { instance, getTemplate } from './assets.js';
 
+/**
+ * Realistic (rigged) character support.
+ *
+ * The foundry characters are rigid-part models with named joints, animated by the
+ * procedural cycle below. GLBs that ship a real skeleton (the rigged sample avatars,
+ * plus anything the player hot-swaps in) are driven instead by retargeting a
+ * procedural walk/run cycle onto their bones by NAME — no external animation
+ * files, and it works on Mixamo, three.js and VRM rigs alike.
+ */
+const BONE_ALIASES = {
+  hips: ['hips', 'Hips', 'mixamorigHips', 'pelvis', 'root'],
+  spine: ['spine', 'Spine', 'mixamorigSpine', 'spine_01'],
+  chest: ['chest', 'Chest', 'mixamorigSpine1', 'spine2', 'spine_02'],
+  neck: ['neck', 'Neck', 'mixamorigNeck'],
+  head: ['head', 'Head', 'mixamorigHead'],
+  shoulderL: ['leftshoulder', 'LeftShoulder', 'mixamorigLeftShoulder', 'clavicle_l'],
+  shoulderR: ['rightshoulder', 'RightShoulder', 'mixamorigRightShoulder', 'clavicle_r'],
+  armL: ['leftarm', 'LeftArm', 'mixamorigLeftArm', 'upperarm_l', 'LeftUpperArm'],
+  armR: ['rightarm', 'RightArm', 'mixamorigRightArm', 'upperarm_r', 'RightUpperArm'],
+  foreArmL: ['leftforearm', 'LeftForeArm', 'mixamorigLeftForeArm', 'lowerarm_l', 'LeftLowerArm'],
+  foreArmR: ['rightforearm', 'RightForeArm', 'mixamorigRightForeArm', 'lowerarm_r', 'RightLowerArm'],
+  handL: ['lefthand', 'LeftHand', 'mixamorigLeftHand', 'hand_l'],
+  handR: ['righthand', 'RightHand', 'mixamorigRightHand', 'hand_r'],
+  thighL: ['leftupleg', 'LeftUpLeg', 'mixamorigLeftUpLeg', 'thigh_l', 'LeftUpperLeg'],
+  thighR: ['rightupleg', 'RightUpLeg', 'mixamorigRightUpLeg', 'thigh_r', 'RightUpperLeg'],
+  shinL: ['leftleg', 'LeftLeg', 'mixamorigLeftLeg', 'calf_l', 'LeftLowerLeg'],
+  shinR: ['rightleg', 'RightLeg', 'mixamorigRightLeg', 'calf_r', 'RightLowerLeg'],
+  footL: ['leftfoot', 'LeftFoot', 'mixamorigLeftFoot', 'foot_l', 'LeftFoot'],
+  footR: ['rightfoot', 'RightFoot', 'mixamorigRightFoot', 'foot_r', 'RightFoot'],
+};
+
+/** local axis each bone rotates about for a swing, per rig family */
+function detectBoneMap(root) {
+  const found = {};
+  const byLower = new Map();
+  root.traverse((o) => {
+    if (o.isBone) byLower.set(o.name.toLowerCase(), o);
+  });
+  for (const [key, aliases] of Object.entries(BONE_ALIASES)) {
+    for (const a of aliases) {
+      const bone = byLower.get(a.toLowerCase());
+      if (bone) { found[key] = bone; break; }
+    }
+  }
+  return { bones: found, isMixamo: Object.values(found).some((b) => /mixamorig/i.test(b.name)) };
+}
+
 const _v = new THREE.Vector3();
 const _v2 = new THREE.Vector3();
 
@@ -40,6 +87,31 @@ export class Character {
         node.userData.rest = node.rotation.clone();
         this.joints[n] = node;
       }
+    }
+
+    // rigged skinning? then drive bones instead of the rigid-part joint set
+    const rig = root ? detectBoneMap(root) : { bones: {} };
+    this.bones = rig.bones;
+    this.rigged = Object.keys(rig.bones).length >= 8;
+    // rest pose captured once, so every frame is an offset from it
+    for (const b of Object.values(this.bones)) b.userData.restQ = b.quaternion.clone();
+    this.rigScale = 1;
+    if (this.rigged && root) {
+      // three.js sample avatars are authored in cm and/or ~1.8x too large
+      const box = new THREE.Box3().setFromObject(root);
+      const h = box.max.y - box.min.y;
+      if (h > 3.2) this.rigScale = 1.8 / h;
+      root.scale.multiplyScalar(this.rigScale);
+      root.position.y = -box.min.y * this.rigScale;
+      // these avatars ship in a T-pose: drop the arms to the sides
+      const drop = (b, sign) => {
+        if (!b) return;
+        b.userData.restQ = b.userData.restQ.clone();
+        b.rotateZ(sign * 1.15);
+        b.userData.restQ = b.quaternion.clone();
+      };
+      drop(this.bones.armL, 1);
+      drop(this.bones.armR, -1);
     }
 
     // physics state
@@ -301,6 +373,10 @@ export class Character {
 
   // ---------------------------------------------------------------- animation
   animate(dt, speed) {
+    if (this.rigged) {
+      this.animateRig(dt, speed);
+      return;
+    }
     const j = this.joints;
     if (!j.hips) return;
     const st = this.moveState;
@@ -389,6 +465,89 @@ export class Character {
         this._set('upperArmR', -1.5 + this.recoil * 0.28, -0.25, -0.12);
         this._set('foreArmR', -0.2 - this.recoil * 0.3, 0, 0);
       }
+    }
+  }
+
+  // ---------------------------------------------------------------- rigged pose
+  /**
+   * Procedural retarget: rotates the actual bones by an offset from their rest
+   * quaternion. Runs for any skeleton with recognisable bone names.
+   */
+  animateRig(dt, speed) {
+    const b = this.bones;
+    if (!this.rigged) return;
+    const st = this.moveState;
+    const rate = st === 'idle' ? 1.6 : 2.4 + speed * 0.75;
+    this.rigPhase = (this.rigPhase || 0) + dt * rate;
+    const s = Math.sin(this.rigPhase);
+    const c = Math.cos(this.rigPhase);
+    const swing = st === 'sprint' ? 0.95 : st === 'run' ? 0.72 : st === 'walk' ? 0.45 : 0.1;
+    const _e = new THREE.Euler();
+    const _q = new THREE.Quaternion();
+    const rot = (bone, x, y, z) => {
+      if (!bone) return;
+      _e.set(x, y, z, 'XYZ');
+      _q.setFromEuler(_e);
+      bone.quaternion.copy(bone.userData.restQ).multiply(_q);
+    };
+    if (st === 'swim') {
+      rot(b.armL, 0, 0, -1.4 + s * 0.9);
+      rot(b.armR, 0, 0, 1.4 - s * 0.9);
+      rot(b.thighL, -s * 0.3, 0, 0);
+      rot(b.thighR, s * 0.3, 0, 0);
+      return;
+    }
+    if (st === 'jump' || st === 'fall') {
+      const t = THREE.MathUtils.clamp(-this.velocity.y / 12, -1, 1);
+      rot(b.armL, 0, 0, -0.7 - t * 0.5);
+      rot(b.armR, 0, 0, 0.7 + t * 0.5);
+      rot(b.thighL, st === 'fall' ? 0.5 : -0.3, 0, 0.05);
+      rot(b.thighR, st === 'fall' ? 0.15 : -0.5, 0, -0.05);
+      rot(b.shinL, 0.7, 0, 0);
+      rot(b.shinR, 0.4, 0, 0);
+      rot(b.spine, 0.12, 0, 0);
+      return;
+    }
+    if (st === 'idle') {
+      const breathe = Math.sin(this.rigPhase) * 0.05;
+      rot(b.spine, breathe * 0.5, 0, 0);
+      rot(b.chest, breathe * 0.4, 0, 0);
+      rot(b.head, -breathe * 0.3, Math.sin(this.rigPhase * 0.3) * 0.14, 0);
+      rot(b.armL, 0, 0, -0.06 - breathe * 0.3);
+      rot(b.armR, 0, 0, 0.06 + breathe * 0.3);
+      rot(b.thighL, 0, 0, 0);
+      rot(b.thighR, 0, 0, 0);
+      rot(b.shinL, 0.03, 0, 0);
+      rot(b.shinR, 0.03, 0, 0);
+      return;
+    }
+    // walk / run / sprint
+    rot(b.thighL, s * swing, 0, 0);
+    rot(b.thighR, -s * swing, 0, 0);
+    rot(b.shinL, Math.max(0, -s) * swing * 1.6 + 0.08, 0, 0);
+    rot(b.shinR, Math.max(0, s) * swing * 1.6 + 0.08, 0, 0);
+    rot(b.footL, -Math.max(0, -s) * 0.35, 0, 0);
+    rot(b.footR, -Math.max(0, s) * 0.35, 0, 0);
+    const lean = st === 'sprint' ? 0.24 : st === 'run' ? 0.13 : 0.05;
+    rot(b.spine, lean, -s * 0.05, 0);
+    rot(b.head, -lean * 0.6, s * 0.03, 0);
+    if (this.aiming && this.weapon !== 'fists') {
+      rot(b.armR, -1.3 + (this.aimPitch || 0) * 0.8, -0.2, 0.12);
+      rot(b.foreArmR, -0.25, 0, 0);
+      rot(b.armL, -1.1 + (this.aimPitch || 0) * 0.5, 0.4, -0.2);
+    } else {
+      rot(b.armL, -s * swing * 0.85, 0, -0.1);
+      rot(b.armR, s * swing * 0.85, 0, 0.1);
+      rot(b.foreArmL, 0.3 + Math.max(0, -s) * 0.5, 0, 0);
+      rot(b.foreArmR, 0.3 + Math.max(0, s) * 0.5, 0, 0);
+    }
+    rot(b.hips, 0, s * 0.06, 0);
+    if (this.punchTimer > 0 && this.weapon === 'fists') {
+      const t = 1 - this.punchTimer / 0.34;
+      const punch = Math.sin(Math.min(1, t * 1.4) * Math.PI);
+      rot(b.armR, 0, -punch * 1.4, 0);
+      rot(b.foreArmR, -punch * 0.8, 0, 0);
+      rot(b.chest, 0, -punch * 0.3, 0);
     }
   }
 

@@ -12,7 +12,9 @@
     "start": "node server.js",
     "check": "node scripts/check.mjs",
     "simulate": "node scripts/simulate.mjs",
-    "test": "npm run check && npm run simulate"
+    "test": "npm run check && npm run simulate",
+    "apk": "node scripts/build-apk.mjs",
+    "android:setup": "node scripts/fetch-android-tools.mjs"
   },
   "repository": {
     "type": "git",

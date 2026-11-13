@@ -6,16 +6,34 @@ import * as THREE from 'three';
 import { instance, getTemplate } from './assets.js';
 
 const _v = new THREE.Vector3();
+const _lean = new THREE.Quaternion();
+const _axisZ = new THREE.Vector3(0, 0, 1);
 
+/**
+ * Performance tiers — each vehicle has a genuinely different top speed, launch,
+ * braking, grip and steering response, grouped so the player can feel the steps:
+ *
+ *   bike  > hyper > race > super > sport > muscle > police > truck
+ *
+ * `top` is m/s (×3.6 for km/h). `accel` m/s², `brake` m/s², `grip` lateral
+ * damping, `steer` rad/s at low speed, `mass` kg (drives inertia + turn rate).
+ */
 export const VEHICLE_DEFS = {
-  ferrari_daytona_sp3: { name: 'Ferrari Daytona SP3', top: 92, accel: 26, brake: 34, grip: 3.4, steer: 1.9, mass: 1450, type: 'car' },
-  porsche_mission_x: { name: 'Porsche Mission X', top: 96, accel: 28, brake: 34, grip: 3.5, steer: 1.9, mass: 1500, type: 'car' },
-  porsche_911_gt3r: { name: 'Porsche 911 GT3 R', top: 90, accel: 27, brake: 36, grip: 3.8, steer: 2.0, mass: 1300, type: 'car' },
-  mustang_roush_1996: { name: '1996 Roush Mustang', top: 78, accel: 20, brake: 28, grip: 2.9, steer: 1.7, mass: 1600, type: 'car' },
-  police_car: { name: 'Police Cruiser', top: 74, accel: 18, brake: 30, grip: 3.0, steer: 1.75, mass: 1700, type: 'car', siren: true },
-  police_lambo_diablo: { name: 'Diablo SV — Police', top: 94, accel: 25, brake: 32, grip: 3.1, steer: 1.85, mass: 1500, type: 'car', siren: true },
-  redbull_rb22: { name: 'Red Bull RB22', top: 118, accel: 34, brake: 44, grip: 4.6, steer: 2.3, mass: 800, type: 'car' },
-  ural_4320_truck: { name: 'URAL-4320', top: 42, accel: 9, brake: 18, grip: 2.2, steer: 1.15, mass: 8000, type: 'truck' },
+  // ---- hypercars (300+ km/h)
+  porsche_mission_x: { name: 'Porsche Mission X', top: 92, accel: 34, brake: 42, grip: 3.9, steer: 2.0, mass: 1500, type: 'car', tier: 'hyper', kmh: 331, drive: 'AWD' },
+  ferrari_daytona_sp3: { name: 'Ferrari Daytona SP3', top: 87, accel: 31, brake: 40, grip: 3.7, steer: 1.95, mass: 1450, type: 'car', tier: 'hyper', kmh: 313, drive: 'RWD' },
+  // ---- race cars
+  redbull_rb22: { name: 'Red Bull RB22', top: 105, accel: 44, brake: 62, grip: 5.4, steer: 2.5, mass: 800, type: 'car', tier: 'race', kmh: 378, drive: 'RWD' },
+  porsche_911_gt3r: { name: 'Porsche 911 GT3 R', top: 79, accel: 27, brake: 40, grip: 4.4, steer: 2.15, mass: 1300, type: 'car', tier: 'race', kmh: 284, drive: 'RWD' },
+  // ---- supercars / sports
+  police_lambo_diablo: { name: 'Diablo SV — Police', top: 84, accel: 26, brake: 34, grip: 3.3, steer: 1.9, mass: 1500, type: 'car', tier: 'super', kmh: 302, siren: true, drive: 'AWD' },
+  mustang_roush_1996: { name: '1996 Roush Mustang', top: 63, accel: 19, brake: 26, grip: 2.7, steer: 1.6, mass: 1600, type: 'car', tier: 'muscle', kmh: 227, drive: 'RWD' },
+  police_car: { name: 'Police Cruiser', top: 57, accel: 15, brake: 28, grip: 2.9, steer: 1.7, mass: 1750, type: 'car', tier: 'police', kmh: 205, siren: true, drive: 'RWD' },
+  // ---- bikes (fastest in a straight line, weakest braking)
+  kawasaki_ninja_h2: { name: 'Kawasaki Ninja H2', top: 100, accel: 46, brake: 30, grip: 2.6, steer: 2.3, mass: 260, type: 'bike', tier: 'bike', kmh: 360, drive: 'RWD' },
+  bmw_s1000rr: { name: 'BMW S1000RR', top: 94, accel: 41, brake: 31, grip: 2.7, steer: 2.35, mass: 250, type: 'bike', tier: 'bike', kmh: 338, drive: 'RWD' },
+  // ---- utility + aircraft
+  ural_4320_truck: { name: 'URAL-4320', top: 22, accel: 5.5, brake: 14, grip: 1.9, steer: 1.05, mass: 8000, type: 'truck', tier: 'truck', kmh: 79, drive: '6x6' },
   aeroplane: { name: 'Aeroplane', top: 105, accel: 12, brake: 14, grip: 2.0, steer: 1.1, mass: 3000, type: 'plane' },
   little_bird_helicopter: { name: 'MH-6 Little Bird', top: 88, accel: 14, brake: 16, grip: 2.4, steer: 1.6, mass: 1200, type: 'heli' },
 };
@@ -37,7 +55,10 @@ export class Vehicle {
     }
     this.root.name = `vehicle:${defId}`;
 
-    this.wheels = ['wheelFL', 'wheelFR', 'wheelRL', 'wheelRR'].map((n) => this.body.getObjectByName(n)).filter(Boolean);
+    this.wheels = ['wheelFL', 'wheelFR', 'wheelML', 'wheelMR', 'wheelRL', 'wheelRR']
+      .map((n) => this.body.getObjectByName(n))
+      .filter(Boolean);
+    this.frontWheels = [this.body.getObjectByName('wheelFL'), this.body.getObjectByName('wheelFR')].filter(Boolean);
     this.rotor = this.body.getObjectByName('rotor');
     this.tailRotor = this.body.getObjectByName('tailRotor');
     this.propL = this.body.getObjectByName('propL');
@@ -78,6 +99,10 @@ export class Vehicle {
 
   get isAircraft() {
     return this.type === 'plane' || this.type === 'heli';
+  }
+
+  get isBike() {
+    return this.type === 'bike';
   }
 
   place(pos, yaw = 0) {
@@ -158,12 +183,16 @@ export class Vehicle {
     // wheels
     this.wheelSpin += (this.speed / this.wheelRadius) * dt;
     for (const w of this.wheels) w.rotation.x = this.wheelSpin;
-    if (this.wheels[0]) this.wheels[0].rotation.y = this.steerAngle * 0.5;
-    if (this.wheels[1]) this.wheels[1].rotation.y = this.steerAngle * 0.5;
+    for (const w of this.frontWheels) w.rotation.y = this.steerAngle * 0.5;
 
-    // body roll + pitch
-    const roll = -this.steerAngle * Math.min(1, Math.abs(this.speed) / def.top) * 0.16;
-    const pitch = -accel * 0.0035;
+    // body roll + pitch — bikes lean hard into the corner, cars squat/roll gently
+    const leanScale = this.isBike ? 0.62 : 0.16;
+    if (this.isBike) {
+      // keep the wheels planted: roll the whole rig, not just the body shell
+      this.roll += (-this.steerAngle * Math.min(1, Math.abs(this.speed) / def.top) * leanScale - this.roll) * Math.min(1, dt * 7);
+    }
+    const roll = -this.steerAngle * Math.min(1, Math.abs(this.speed) / def.top) * leanScale;
+    const pitch = -accel * (this.isBike ? 0.0022 : 0.0035) + (this.isBike ? -Math.min(0.12, Math.abs(this.speed) / def.top * 0.12) : 0);
     if (this.body) {
       this.body.rotation.z += (roll - this.body.rotation.z) * Math.min(1, dt * 6);
       this.body.rotation.x += (pitch - this.body.rotation.x) * Math.min(1, dt * 6);
@@ -218,7 +247,12 @@ export class Vehicle {
     this.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), steerIn * def.steer * dt * (isHeli ? 0.9 : 0.55)));
 
     this.root.position.copy(this.position);
-    this.root.quaternion.copy(this.quaternion);
+    // bikes visibly lean into corners
+    if (this.isBike && this.roll) {
+      this.root.quaternion.copy(this.quaternion).multiply(_lean.setFromAxisAngle(_axisZ, this.roll));
+    } else {
+      this.root.quaternion.copy(this.quaternion);
+    }
     this.body.rotation.z = this.roll;
     this.body.rotation.x = this.pitch;
 

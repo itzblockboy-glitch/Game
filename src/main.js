@@ -22,12 +22,19 @@ import { Vehicle, VEHICLE_DEFS } from './vehicles.js';
 import { Network, FLAG } from './network.js';
 import { VoiceChat } from './voice.js';
 import { UI } from './ui.js';
+import { audio } from './sound.js';
+import { VFX } from './vfx.js';
+import { RenderPass } from './vendor/RenderPass.js';
+import { EffectComposer } from './vendor/EffectComposer.js';
+import { UnrealBloomPass } from './vendor/UnrealBloomPass.js';
+import { OutputPass } from './vendor/OutputPass.js';
+import { ShaderPass } from './vendor/ShaderPass.js';
 
 // ---------------------------------------------------------------- quality tiers
 const QUALITY = [
-  { name: 'Performance', dpr: 0.75, shadow: false, shadowMap: 1024, fog: 0.0022, lod: 300, targetFps: 30 },
-  { name: 'Balanced', dpr: 1.0, shadow: true, shadowMap: 1024, fog: 0.0016, lod: 380, targetFps: 60 },
-  { name: 'High', dpr: 1.6, shadow: true, shadowMap: 2048, fog: 0.0013, lod: 520, targetFps: 60 },
+  { name: 'Performance', dpr: 0.75, shadow: false, shadowMap: 1024, fog: 0.0022, lod: 300, targetFps: 30, post: false, bloom: 0, msaa: 0 },
+  { name: 'Balanced', dpr: 1.0, shadow: true, shadowMap: 2048, fog: 0.0016, lod: 380, targetFps: 60, post: true, bloom: 0.32, msaa: 2 },
+  { name: 'Cinematic', dpr: 1.35, shadow: true, shadowMap: 3024, fog: 0.0012, lod: 620, targetFps: 60, post: true, bloom: 0.52, msaa: 4 },
 ];
 
 const isTouch = matchMedia('(pointer: coarse)').matches;
@@ -48,7 +55,7 @@ const state = {
 const canvas = document.getElementById('scene');
 const renderer = new THREE.WebGLRenderer({
   canvas,
-  antialias: !isTouch,
+  antialias: false, // MSAA is done inside the HDR composer
   powerPreference: 'high-performance',
   alpha: false,
   stencil: false,
@@ -56,14 +63,65 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setClearColor(0xbfd8ea);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+// ACES + a slightly filmic exposure is the biggest single "realism" lever
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.06;
+renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate = true;
 renderer.info.autoReset = false;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(64, innerWidth / innerHeight, 0.25, 3200);
+
+// ---------------------------------------------------------------- cinematic render pipeline
+// HDR (half-float) render target → bloom → ACES tone map → sRGB output.
+// Quality tiers switch post off entirely for low-end devices.
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, {
+  type: THREE.HalfFloatType,
+  samples: 2,
+}));
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.32, 0.62, 0.86);
+composer.addPass(bloomPass);
+const outputPass = new OutputPass();
+composer.addPass(outputPass);
+composer.setSize(innerWidth, innerHeight);
+
+// subtle cinematic grade: warm highlights, cool shadows, vignette, film grain
+const gradePass = new ShaderPass({
+  uniforms: {
+    tDiffuse: { value: null },
+    uVignette: { value: 0.34 },
+    uGrain: { value: 0.035 },
+    uTime: { value: 0 },
+    uWarmth: { value: 0.06 },
+  },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `
+    uniform sampler2D tDiffuse; uniform float uVignette; uniform float uGrain; uniform float uTime; uniform float uWarmth;
+    varying vec2 vUv;
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    void main(){
+      vec3 c = texture2D(tDiffuse, vUv).rgb;
+      // split-tone: lift warm mids, cool the shadows a touch
+      float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+      c = mix(c, c * vec3(1.0 + uWarmth, 1.0 + uWarmth * 0.2, 1.0 - uWarmth * 0.6), smoothstep(0.15, 0.85, l));
+      c = mix(c, c * vec3(0.94, 0.97, 1.06), 1.0 - smoothstep(0.02, 0.35, l));
+      // gentle contrast curve
+      c = pow(c, vec3(1.03));
+      // vignette
+      vec2 q = vUv - 0.5;
+      float vig = smoothstep(0.9, 0.28, length(q) * 1.25);
+      c *= mix(1.0, vig, uVignette);
+      // film grain
+      float g = hash(vUv * 1024.0 + uTime) - 0.5;
+      c += g * uGrain;
+      gl_FragColor = vec4(c, 1.0);
+    }`,
+});
+composer.addPass(gradePass);
 
 const world = new World(renderer, scene, camera);
 const ui = new UI();
@@ -88,6 +146,7 @@ const game = {
   colliders: [],
 };
 
+const vfx = new VFX(scene, renderer);
 let player = null;
 let activeVehicle = null;
 let vehicles = [];
@@ -186,8 +245,15 @@ function onKeyAction(act, down, e) {
       if (down) toggleVehicle();
       break;
     case 'reload':
+      if (down && activeVehicle && activeVehicle.def.siren) {
+        const on = activeVehicle.toggleSiren();
+        audio.siren(on && vehNearby(activeVehicle));
+        ui.toast(on ? 'Siren ON' : 'Siren OFF', 'info');
+        break;
+      }
       if (down && player) {
         player.reload();
+        audio.ui('click');
         ui.toast(`Reloaded ${WEAPONS[player.weapon]?.name || ''}`, 'good');
       }
       break;
@@ -244,6 +310,18 @@ addEventListener('contextmenu', (e) => e.preventDefault());
 
 // pointer-lock-free mouse look: drag or raw movement on the canvas
 let dragging = false;
+const unlockAudio = () => {
+  if (audio.unlock()) {
+    audio.startMusic();
+    document.removeEventListener('pointerdown', unlockAudio);
+    document.removeEventListener('keydown', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+  }
+};
+document.addEventListener('pointerdown', unlockAudio);
+document.addEventListener('keydown', unlockAudio);
+document.addEventListener('touchstart', unlockAudio);
+
 canvas.addEventListener('pointerdown', (e) => {
   if (e.pointerType === 'touch') return;
   dragging = true;
@@ -386,6 +464,8 @@ async function boot() {
     'weapon_g17_handgun',
     'weapon_pp19_vityaz',
     'weapon_akmn_rifle',
+    'readyplayer_urban',
+    'michelle_rigged',
     'npc_office_worker_male',
     'npc_cop',
     'npc_jogger',
@@ -519,7 +599,9 @@ function runChromeCheck() {
 
 // ---------------------------------------------------------------- spawn
 function spawnPlayer() {
-  player = new Character('player_jason', {
+  // the realistic rigged avatar is the playable body; the foundry model is the fallback
+  const heroId = getTemplate('readyplayer_urban') ? 'readyplayer_urban' : 'player_jason';
+  player = new Character(heroId, {
     isPlayer: true,
     onShoot: onPlayerShoot,
   });
@@ -542,6 +624,8 @@ function spawnVehicles() {
     ['ural_4320_truck', -166, -44, 0.4],
     ['police_car', 128, -128, 2.6],
     ['mustang_roush_1996', -44, -166, 1.0],
+    ['kawasaki_ninja_h2', 46, 22, -1.3],
+    ['bmw_s1000rr', -58, 4, 1.9],
   ];
   vehicles = spots.map(([id, x, z, yaw]) => {
     const v = new Vehicle(id, id);
@@ -575,16 +659,21 @@ function vehicleIndex(id) {
 }
 
 function spawnNPCs() {
-  const npcIds = manifest.models
-    .filter((m) => m.kind === 'npc' && !m.upstream && getTemplate(m.id))
-    .map((m) => m.id);
+  // realistic rigged pedestrians where available, foundry archetypes for variety
+  const riggedPeds = ['michelle_rigged', 'readyplayer_urban'].filter((id) => getTemplate(id));
+  const npcIds = [
+    ...manifest.models
+      .filter((m) => m.kind === 'npc' && !m.upstream && getTemplate(m.id))
+      .map((m) => m.id),
+  ];
+  const pedPool = [...riggedPeds, ...riggedPeds, ...npcIds];
   if (!npcIds.length) return;
 
   // pedestrians
-  for (let i = 0; i < 18; i++) {
-    const id = npcIds[i % npcIds.length];
+  for (let i = 0; i < 12; i++) {
+    const id = pedPool[i % pedPool.length];
     const ch = new Character(id, { onShoot: () => {} });
-    const angle = (i / 18) * Math.PI * 2;
+    const angle = (i / 12) * Math.PI * 2;
     const r = 24 + (i % 5) * 14;
     ch.reset(new THREE.Vector3(-40 + Math.cos(angle) * r, 0.05, -40 + Math.sin(angle) * r), angle);
     ch.isNPC = true;
@@ -595,7 +684,7 @@ function spawnNPCs() {
     npcs.push(ch);
   }
   // ambient traffic
-  const trafficIds = ['police_car', 'mustang_roush_1996', 'ferrari_daytona_sp3', 'porsche_911_gt3r'];
+  const trafficIds = ['police_car', 'mustang_roush_1996', 'ferrari_daytona_sp3', 'porsche_911_gt3r', 'bmw_s1000rr', 'kawasaki_ninja_h2'];
   for (let i = 0; i < 6; i++) {
     const id = trafficIds[i % trafficIds.length];
     if (!getTemplate(id)) continue;
@@ -727,6 +816,8 @@ function toggleVehicle() {
     activeVehicle = null;
     state.inVehicle = false;
     ui.showSpeedo(false);
+    audio.stopEngine();
+    audio.ui('click');
     ui.toast('Exited vehicle');
     return;
   }
@@ -739,7 +830,16 @@ function toggleVehicle() {
   state.inVehicle = true;
   ui.showSpeedo(true);
   ui.setVehicleHUd(v.def.name, v.isAircraft ? 'W/S throttle · A/D bank · ↑/↓ climb · C cockpit' : 'W/S throttle · A/D steer · Space handbrake · R siren');
+  audio.ui('success');
+  audio.startEngine();
+  vfx.dust(v.position, 5);
   ui.toast(`Entered ${v.def.name}`, 'good');
+}
+
+/** is a siren vehicle close enough to the camera to be audible? */
+function vehNearby(v) {
+  const d = Math.hypot(v.position.x - camera.position.x, v.position.z - camera.position.z);
+  return d < 90;
 }
 
 function updateVehicles(dt) {
@@ -830,6 +930,7 @@ function onPlayerShoot(payload) {
     return;
   }
   if (payload.type === 'empty') {
+    audio.dryFire();
     ui.toast('Out of ammo — press R', 'warn');
     return;
   }
@@ -840,6 +941,10 @@ function onPlayerShoot(payload) {
   const dir = new THREE.Vector3();
   player.getMuzzle(origin, dir);
   spawnBulletVisual(origin, dir, def.range);
+  const gunKind = payload.weapon === 'weapon_akmn_rifle' ? 'rifle' : payload.weapon === 'weapon_pp19_vityaz' ? 'smg' : 'pistol';
+  audio.gunshot(gunKind);
+  vfx.muzzleFlash(origin, dir);
+  vfx.shellCasing(origin, dir);
 
   // raycast against colliders + entities
   const hit = world.raycastAABB(origin, dir, def.range);
@@ -862,13 +967,19 @@ function onPlayerShoot(payload) {
   }
   if (hitTarget) {
     if (hitTarget.health !== undefined) hitTarget.health -= def.damage;
-    spawnImpact(origin.clone().addScaledVector(dir, bestT));
+    const hitPos = origin.clone().addScaledVector(dir, bestT);
+    spawnImpact(hitPos);
+    vfx.impact(hitPos, dir.clone().negate(), 'flesh');
+    audio.impact('flesh', hitPos);
     if (hitTarget.health !== undefined && hitTarget.health <= 0 && !hitTarget.dead) {
       hitTarget.dead = true;
       if (hitTarget.root) hitTarget.root.rotation.z = Math.PI / 2;
     }
   } else if (hit) {
-    spawnImpact(origin.clone().addScaledVector(dir, hit.distance));
+    const hitPos = origin.clone().addScaledVector(dir, hit.distance);
+    spawnImpact(hitPos);
+    vfx.impact(hitPos, hit.normal || dir.clone().negate(), 'metal');
+    audio.impact('metal', hitPos);
   }
 }
 
@@ -1071,6 +1182,7 @@ function updatePlayer(dt) {
   f = THREE.MathUtils.clamp(f - input.touchMove.y * (isTouch ? 1 : 0), -1, 1);
   r = THREE.MathUtils.clamp(r + input.touchMove.x * (isTouch ? 1 : 0), -1, 1);
   const wasGround = player.onGround;
+  const wasPos = player.position.clone();
   player.update(dt, {
     forward: f,
     right: r,
@@ -1081,13 +1193,29 @@ function updatePlayer(dt) {
     pitch: (cam.pitch - 0.16) * 1.4,
     yaw: cam.yaw + Math.PI,
   }, world);
+  // ---- footsteps + dust
+  const moved = Math.hypot(player.position.x - wasPos.x, player.position.z - wasPos.z);
+  if (player.onGround && moved > 0.004) {
+    player._stepAcc = (player._stepAcc || 0) + moved;
+    if (player._stepAcc > (input.sprint ? 1.5 : 2.0)) {
+      player._stepAcc = 0;
+      const surface = player.position.y < 0.2 && world.isSand?.(player.position) ? 'sand' : 'concrete';
+      audio.footstep(surface, input.sprint);
+      if (input.sprint) vfx.dust(player.position, 2);
+    }
+  }
+  if (wasGround && !player.onGround && player.velocity.y > 2) audio.jump();
   if (!wasGround && player.onGround) {
     const impact = player.landedImpact || 0;
     if (impact > 0.25) {
       cam.shake = Math.max(cam.shake, impact * 0.5);
+      audio.land(Math.min(1, impact / 2));
+      vfx.dust(player.position, 4);
       player.landedImpact = 0;
     }
   }
+  // swimming splash
+  if (player.position.y < -0.6 && Math.random() < 0.08) vfx.splash(player.position);
   if (player.position.y < -3) {
     player.reset(new THREE.Vector3(-40, 0.1, 34), cam.yaw);
     ui.toast('Respawned', 'warn');
@@ -1230,6 +1358,20 @@ function shareRoom() {
   }
   return url;
 }
+
+/**
+ * Android hardware back button (wired in android/.../MainActivity): close the
+ * chat, then the asset hub, then unpause — only exit the app when nothing is open.
+ * Returns true when the press was consumed by the game.
+ */
+window.__onAndroidBack = () => {
+  const visible = (el) => el && !el.classList.contains('hidden');
+  if (visible(ui.el.chatWrap)) { ui.closeChat(); return true; }
+  if (visible(ui.el.hub)) { ui.toggleHub(false); return true; }
+  if (state.paused) { setPaused(false); return true; }
+  if (state.started) { setPaused(true); return true; }
+  return false;
+};
 
 function setPaused(p) {
   state.paused = p;
@@ -1445,8 +1587,18 @@ function togglePhotoMode() {
 function applyQuality(level) {
   state.quality = level;
   const q = QUALITY[level];
+  bloomPass.enabled = q.post && q.bloom > 0;
+  bloomPass.strength = q.bloom;
+  if (composer.renderTarget1 && q.msaa !== undefined) {
+    composer.renderTarget1.samples = q.msaa;
+    composer.renderTarget2.samples = q.msaa;
+    composer.renderTarget1.dispose();
+    composer.renderTarget2.dispose();
+  }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.dpr) * (state.dataSaver && isTouch ? 0.85 : 1));
   renderer.setSize(innerWidth, innerHeight);
+  composer.setPixelRatio(renderer.getPixelRatio());
+  composer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = q.shadow && state.shadows;
   world.sun.castShadow = q.shadow && state.shadows;
   if (world.sun.shadow.map && world.sun.shadow.mapSize.width !== q.shadowMap) {
@@ -1557,7 +1709,63 @@ function frame(now) {
   world.ocean.position.x = camera.position.x - 1500;
   world.ocean.position.z = camera.position.z;
 
-  renderer.render(scene, camera);
+  // ---- audio + VFX housekeeping
+  audio.setListener(camera.position, cam.yaw);
+  const veh = activeVehicle;
+  if (veh && !veh.isAircraft) {
+    audio.startEngine();
+    const rpm01 = THREE.MathUtils.clamp(Math.abs(veh.speed) / veh.def.top, 0, 1);
+    audio.updateEngine(rpm01, Math.abs(input.throttle) || 0, veh.def.type === 'truck' ? 'truck' : veh.def.type === 'bike' ? 'bike' : 'car', veh.position);
+    audio.setWind(Math.abs(veh.speed) / 60);
+    // gear shift + crash feedback
+    const gear = Math.floor(Math.abs(veh.speed) / Math.max(6, veh.def.top / 6));
+    if (veh._gear !== undefined && gear !== veh._gear && Math.abs(veh.speed) > 3) audio.gearShift();
+    veh._gear = gear;
+    if (veh._lastSpeed !== undefined && Math.abs(veh._lastSpeed - Math.abs(veh.speed)) > 6) {
+      const f = Math.min(1.5, Math.abs(veh._lastSpeed - Math.abs(veh.speed)) / 18);
+      audio.crash(f);
+      vfx.impact(veh.position.clone().setY(veh.position.y + 0.6), null, 'metal');
+      cam.shake = Math.max(cam.shake, 0.35 * f);
+    }
+    veh._lastSpeed = Math.abs(veh.speed);
+    if (Math.abs(veh.speed) > 4) {
+      // tyre smoke + skid marks under heavy braking / drifting
+      const slip = Math.abs(veh.steerAngle) * Math.abs(veh.speed);
+      if (input.handbrake || (input.brake && Math.abs(veh.speed) > 20) || slip > 0.7) {
+        vfx.tyreSmoke(veh.position, Math.min(1, Math.abs(veh.speed) / 40));
+        if (veh._skidPrev) {
+          for (const side of [-1, 1]) {
+            const off = new THREE.Vector3(side * 0.8, 0, -1.2).applyQuaternion(veh.quaternion).add(veh.position);
+            vfx.skid(`${veh.id}${side}`, off, off.clone().add(new THREE.Vector3().subVectors(off, veh._skidPrev)));
+          }
+        }
+        veh._skidPrev = veh.position.clone();
+      } else {
+        veh._skidPrev = null;
+      }
+    }
+  } else if (veh && veh.isAircraft) {
+    audio.startEngine();
+    audio.updateEngine(Math.abs(veh.speed) / veh.def.top, 1, 'heli', veh.position);
+    audio.setWind(0.7);
+  } else {
+    audio.stopEngine();
+    audio.setWind(0);
+  }
+  audio.updateMusic(rawDt);
+  vfx.update(rawDt, camera, player ? player.position : camera.position);
+  if (vfx.flash > 0) {
+    renderer.toneMappingExposure = 1.0 + vfx.flash * 0.55;
+  } else {
+    renderer.toneMappingExposure = 1.0;
+  }
+
+  if (QUALITY[state.quality].post) {
+    gradePass.uniforms.uTime.value = (gradePass.uniforms.uTime.value + rawDt * 12) % 1000;
+    composer.render();
+  } else {
+    renderer.render(scene, camera);
+  }
   lastTris = renderer.info.render.triangles;
 }
 

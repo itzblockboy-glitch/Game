@@ -283,6 +283,221 @@ Geo.prototype.applyMatrix = function (matrix) {
   return this;
 };
 
+// ---------------------------------------------------------------- smooth (PBR-friendly) surfaces
+/**
+ * Smooth-shaded lofted surface. Each section is a rounded-rectangle ring in the XY
+ * plane placed at z; rings are stitched with shared vertices so normals average into
+ * soft, rounded bodywork instead of faceted low-poly slabs.
+ *
+ *   sections: [{ z, y, w, h, r }]  (r = corner radius, 0..0.49, fraction of min(w,h))
+ */
+export function loftGeo(sections, { color, m, segPerCorner = 4, capStart = true, capEnd = true, colors } = {}) {
+  const g = new Geo();
+  const ringPts = (sec) => {
+    const hw = sec.w / 2, hh = sec.h / 2;
+    const rr = Math.max(0.0001, Math.min(hw, hh) * (sec.r ?? 0.35));
+    const pts = [];
+    // four corner arcs, CCW starting at bottom-right
+    const corners = [
+      [hw - rr, -hh + rr, -Math.PI / 2], // bottom-right
+      [hw - rr, hh - rr, 0],             // top-right
+      [-hw + rr, hh - rr, Math.PI / 2],  // top-left
+      [-hw + rr, -hh + rr, Math.PI],     // bottom-left
+    ];
+    for (const [cx, cy, a0] of corners) {
+      for (let i = 0; i <= segPerCorner; i++) {
+        const a = a0 + (i / segPerCorner) * (Math.PI / 2);
+        pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]);
+      }
+    }
+    return pts;
+  };
+  const rings = [];
+  for (const sec of sections) {
+    const pts = ringPts(sec);
+    const ring = [];
+    for (let i = 0; i < pts.length; i++) {
+      const [x, y] = pts[i];
+      ring.push({
+        p: [x, (sec.y || 0) + y, sec.z],
+        c: colors ? colors(sec, i / pts.length) : C(color),
+      });
+    }
+    rings.push(ring);
+  }
+  // shared vertices with accumulated normals
+  const grid = rings.map((ring) => ring.map((v) => ({ p: v.p, c: v.c, n: [0, 0, 0] })));
+  const addQuad = (a, b, c, d) => {
+    const n = cross3(
+      [b.p[0] - a.p[0], b.p[1] - a.p[1], b.p[2] - a.p[2]],
+      [c.p[0] - a.p[0], c.p[1] - a.p[1], c.p[2] - a.p[2]]
+    );
+    for (const v of [a, b, c, d]) {
+      v.n[0] += n[0];
+      v.n[1] += n[1];
+      v.n[2] += n[2];
+    }
+  };
+  const N = grid[0].length;
+  for (let s = 0; s < grid.length - 1; s++) {
+    for (let i = 0; i < N; i++) {
+      const j = (i + 1) % N;
+      addQuad(grid[s][i], grid[s][j], grid[s + 1][j], grid[s + 1][i]);
+    }
+  }
+  const idxOf = (ring, i) => {
+    const v = grid[ring][i % N];
+    const len = Math.hypot(v.n[0], v.n[1], v.n[2]) || 1;
+    return g._vert(v.p, [v.n[0] / len, v.n[1] / len, v.n[2] / len], v.c);
+  };
+  const quadIdx = (pa, pb, pc, pd, hint) => {
+    const ia = idxOf(pa[0], pa[1]), ib = idxOf(pb[0], pb[1]), ic = idxOf(pc[0], pc[1]), id = idxOf(pd[0], pd[1]);
+    const n = cross3(
+      [g.pos[ib * 3] - g.pos[ia * 3], g.pos[ib * 3 + 1] - g.pos[ia * 3 + 1], g.pos[ib * 3 + 2] - g.pos[ia * 3 + 2]],
+      [g.pos[ic * 3] - g.pos[ia * 3], g.pos[ic * 3 + 1] - g.pos[ia * 3 + 1], g.pos[ic * 3 + 2] - g.pos[ia * 3 + 2]]
+    );
+    const flip = n[0] * hint[0] + n[1] * hint[1] + n[2] * hint[2] < 0;
+    if (flip) g.idx.push(ia, ic, ib, ia, id, ic);
+    else g.idx.push(ia, ib, ic, ia, ic, id);
+  };
+  for (let s = 0; s < grid.length - 1; s++) {
+    const secA = sections[s], secB = sections[s + 1];
+    for (let i = 0; i < N; i++) {
+      const j = (i + 1) % N;
+      // outward hint: away from the ring centre in this section
+      const p = grid[s][i].p;
+      const hint = [p[0], p[1] - ((secA.y || 0)), 0];
+      if (Math.hypot(hint[0], hint[1]) < 1e-4) hint[1] = 1;
+      quadIdx([s, i], [s, j], [s + 1, j], [s + 1, i], hint);
+    }
+  }
+  // end caps (fan around the ring centre, facing along the sweep axis)
+  const caps = [];
+  const cap = (ring, sign) => {
+    const sec = sections[ring];
+    const cIdx = g._vert([0, sec.y || 0, sec.z], [0, 0, sign], C(color));
+    const ids = [];
+    for (let i = 0; i < N; i++) ids.push(idxOf(ring, i));
+    for (let i = 0; i < N; i++) {
+      const a = ids[i], b = ids[(i + 1) % N];
+      // pick winding that agrees with the cap normal
+      const n = cross3(
+        [g.pos[a * 3] - g.pos[cIdx * 3], g.pos[a * 3 + 1] - g.pos[cIdx * 3 + 1], g.pos[a * 3 + 2] - g.pos[cIdx * 3 + 2]],
+        [g.pos[b * 3] - g.pos[cIdx * 3], g.pos[b * 3 + 1] - g.pos[cIdx * 3 + 1], g.pos[b * 3 + 2] - g.pos[cIdx * 3 + 2]]
+      );
+      if (n[2] * sign < 0) g.idx.push(cIdx, b, a);
+      else g.idx.push(cIdx, a, b);
+    }
+  };
+  if (capStart) cap(0, -1);
+  if (capEnd) cap(grid.length - 1, 1);
+  if (m) g.applyMatrix(m);
+  return g;
+}
+
+/** lathe a profile [[radius, axial]] around the X axis — tyres, rims, exhausts, barrels */
+export function latheGeo(profile, seg, color, m, { closed = false } = {}) {
+  const g = new Geo();
+  const col = C(color);
+  const rings = profile.map(([r, x]) => {
+    const ring = [];
+    for (let i = 0; i < seg; i++) {
+      const a = (i / seg) * Math.PI * 2;
+      ring.push([x, Math.cos(a) * r, Math.sin(a) * r]);
+    }
+    return ring;
+  });
+  const nrm = (i, j) => {
+    const a = rings[i][j % seg], b = rings[i][(j + 1) % seg], c = rings[Math.min(rings.length - 1, i + 1)][j % seg];
+    const n = cross3([b[0] - a[0], b[1] - a[1], b[2] - a[2]], [c[0] - a[0], c[1] - a[1], c[2] - a[2]]);
+    const l = Math.hypot(n[0], n[1], n[2]) || 1;
+    return [n[0] / l, n[1] / l, n[2] / l];
+  };
+  for (let i = 0; i < rings.length - 1; i++) {
+    for (let j = 0; j < seg; j++) {
+      const n = nrm(i, j);
+      const a = rings[i][j], b = rings[i][(j + 1) % seg], c = rings[i + 1][(j + 1) % seg], d = rings[i + 1][j];
+      const i0 = g._vert(a, n, col), i1 = g._vert(b, n, col), i2 = g._vert(c, n, col), i3 = g._vert(d, n, col);
+      g.idx.push(i0, i1, i2, i0, i2, i3);
+    }
+  }
+  if (closed) {
+    const first = rings[0], last = rings[rings.length - 1];
+    for (let j = 0; j < seg; j++) {
+      const n = nrm(0, j);
+      const a = last[j], b = last[(j + 1) % seg], c = first[(j + 1) % seg], d = first[j];
+      const i0 = g._vert(a, n, col), i1 = g._vert(b, n, col), i2 = g._vert(c, n, col), i3 = g._vert(d, n, col);
+      g.idx.push(i0, i1, i2, i0, i2, i3);
+    }
+  }
+  if (m) g.applyMatrix(m);
+  return g;
+}
+
+/** rounded, smooth-normal box — reads as machined metal rather than a cube */
+export function smoothBox(w, h, d, color, m, { r = 0.18, seg = 3 } = {}) {
+  const sections = [];
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const bulge = Math.sin(t * Math.PI) * 0.5 + 0.5; // rounded ends along z
+    sections.push({
+      z: -d / 2 + d * t,
+      w: w * (0.82 + 0.18 * bulge),
+      h: h * (0.82 + 0.18 * bulge),
+      r,
+    });
+  }
+  return loftGeo(sections, { color, m, segPerCorner: seg });
+}
+
+/** smooth capsule (sphere-capped cylinder) along Y */
+export function capsuleGeo(r, len, seg, color, m) {
+  const prof = [];
+  const cap = 6;
+  for (let i = 0; i <= cap; i++) {
+    const a = (i / cap) * Math.PI * 0.5;
+    prof.push([Math.sin(a) * r, -len / 2 - Math.cos(a) * r]);
+  }
+  for (let i = cap; i >= 0; i--) {
+    const a = (i / cap) * Math.PI * 0.5;
+    prof.push([Math.sin(a) * r, len / 2 + Math.cos(a) * r]);
+  }
+  return latheGeo(prof, seg, color, m);
+}
+
+/** wheel-arch band: a rounded rectangle cross-section swept along an arc in the YZ plane */
+export function archGeo(rad, thick, width, a0, a1, seg, color, m) {
+  const g = new Geo();
+  const col = C(color);
+  const hw = width / 2;
+  const secs = [];
+  for (let i = 0; i <= seg; i++) {
+    const a = a0 + (a1 - a0) * (i / seg);
+    const cy = Math.cos(a), sy = Math.sin(a);
+    // cross-section corners: inner/outer x radial, and the two side walls in X
+    secs.push([
+      [-hw, cy * rad, sy * rad],
+      [hw, cy * rad, sy * rad],
+      [hw, cy * (rad + thick), sy * (rad + thick)],
+      [-hw, cy * (rad + thick), sy * (rad + thick)],
+    ]);
+  }
+  const hint = (a) => [0, Math.cos(a), Math.sin(a)];
+  for (let i = 0; i < seg; i++) {
+    const a = a0 + (a1 - a0) * ((i + 0.5) / seg);
+    const p = secs[i], q = secs[i + 1];
+    const h = hint(a);
+    // outer face, inner face, and both side walls
+    g.quad(p[2], q[2], q[3], p[3], h, col);
+    g.quad(p[0], q[0], q[1], p[1], [-h[0], -h[1], -h[2]], col);
+    g.quad(p[0], q[0], q[2], p[2], [-1, 0, 0], col);
+    g.quad(p[1], q[1], q[3], p[3], [1, 0, 0], col);
+  }
+  if (m) g.applyMatrix(m);
+  return g;
+}
+
 // ---------------------------------------------------------------- transforms
 export function mat({ pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1] } = {}) {
   return new THREE.Matrix4().compose(

@@ -48,9 +48,18 @@ export class Network {
     this.room = (room || 'PUBLIC').toUpperCase();
     this.name = name;
     if (this.ws) this.disconnect();
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${proto}://${location.host}/ws`;
-    this.ws = new WebSocket(url);
+    // when the game runs from the APK (file://) there is no server host, so fall
+    // back to the configured public multiplayer endpoint; online play is optional
+    const isFile = location.protocol === 'file:';
+    const proto = isFile ? 'wss' : location.protocol === 'https:' ? 'wss' : 'ws';
+    const host = isFile ? (window.LS_SERVER || 'los-santos-game.onrender.com') : location.host;
+    const url = `${proto}://${host}/ws`;
+    try {
+      this.ws = new WebSocket(url);
+    } catch (err) {
+      this._emit('status', { connected: false, offline: true, error: err });
+      return;
+    }
     this.ws.binaryType = 'arraybuffer';
 
     this.ws.onopen = () => {
@@ -75,6 +84,8 @@ export class Network {
     };
 
     this.ws.onerror = () => {
+      // offline APK play: never let a dead socket break the single-player game
+      this._emit('status', { connected: false, offline: true });
       this._emit('error', 'connection');
     };
   }

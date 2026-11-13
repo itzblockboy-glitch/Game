@@ -8,6 +8,7 @@
 import { GLTFLoader } from './vendor/GLTFLoader.js';
 import { DRACOLoader } from './vendor/DRACOLoader.js';
 import * as THREE from 'three';
+import { clone as skeletonClone } from './vendor/SkeletonUtils.js';
 
 const DB_NAME = 'losSantos';
 const STORE = 'glb-v1';
@@ -126,8 +127,11 @@ function makeTemplate(gltf, meta) {
   const box = new THREE.Box3().setFromObject(scene);
   const size = new THREE.Vector3();
   box.getSize(size);
+  let rigged = false;
+  scene.traverse((o) => { if (o.isSkinnedMesh) rigged = true; });
   return {
     scene,
+    rigged,
     clips: gltf.animations || [],
     meta,
     boundingBox: box,
@@ -197,9 +201,12 @@ export function getTemplate(id) {
 export function instance(id) {
   const tpl = templates.get(id);
   if (!tpl) return null;
-  const clone = tpl.scene.clone(true);
+  // rigged assets must be cloned through SkeletonUtils so each instance gets its
+  // own bone hierarchy (otherwise every NPC shares one skeleton and they all
+  // play the same pose)
+  const clone = tpl.rigged ? skeletonClone(tpl.scene) : tpl.scene.clone(true);
   clone.userData.modelId = id;
-  // clone() keeps geometry+material references shared — exactly what we want
+  // clone keeps geometry + material references shared — exactly what we want
   return clone;
 }
 

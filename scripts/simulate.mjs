@@ -225,7 +225,7 @@ console.log('\nVehicles…');
 for (const id of ['ferrari_daytona_sp3', 'police_car', 'redball']) {
   if (!registry.has(id)) continue;
 }
-for (const id of ['ferrari_daytona_sp3', 'police_car', 'ural_4320_truck', 'redbull_rb22', 'porsche_911_gt3r', 'mustang_roush_1996', 'police_lambo_diablo', 'porsche_mission_x']) {
+for (const id of ['ferrari_daytona_sp3', 'police_car', 'ural_4320_truck', 'redbull_rb22', 'porsche_911_gt3r', 'mustang_roush_1996', 'police_lambo_diablo', 'porsche_mission_x', 'kawasaki_ninja_h2', 'bmw_s1000rr']) {
   const v = new Vehicle(id, id);
   v.place(new THREE.Vector3(0, 0, 0), 0);
   const z0 = v.position.z;
@@ -236,7 +236,9 @@ for (const id of ['ferrari_daytona_sp3', 'police_car', 'ural_4320_truck', 'redbu
   }
   const kmh = topSpeed;
   const moved = Math.abs(v.position.z - z0) + Math.abs(v.position.x);
-  const wheelsSpin = v.wheels.length === 4;
+  // 4 wheels for cars, 6 for the Ural, 2 for bikes — all must spin
+  // 4 wheels for cars, 6 for the Ural, 2 for bikes — every wheel must have turned
+  const wheelsSpin = v.wheels.length >= 2 && Math.abs(v.wheelSpin) > 0.5;
   if (kmh > 20 && moved > 5 && wheelsSpin) ok(`${id.padEnd(22)} ${kmh.toFixed(0).padStart(4)} km/h · ${moved.toFixed(0).padStart(4)} m · ${v.wheels.length} wheels`);
   else bad(`${id}: speed ${kmh.toFixed(0)} km/h moved ${moved.toFixed(1)} wheels ${v.wheels.length}`);
 }

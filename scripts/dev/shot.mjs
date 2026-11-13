@@ -12,7 +12,7 @@ const browser = await puppeteer.launch({
     '--disable-features=UseChromeOSDirectVideoDecoder',
   ],
   env: { ...process.env, LD_LIBRARY_PATH: '/tmp/al2023/lib:/tmp/swiftshader' },
-  protocolTimeout: 180000,
+  protocolTimeout: 600000,
 });
 const page = await browser.newPage();
 await page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1 });

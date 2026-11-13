@@ -21,6 +21,20 @@ const FILES = [
   ['examples/jsm/controls/OrbitControls.js', 'OrbitControls.js'],
   ['examples/jsm/loaders/DRACOLoader.js', 'DRACOLoader.js'],
   ['examples/jsm/libs/meshopt_decoder.module.js', 'meshopt_decoder.module.js'],
+  // post-processing chain (realistic renderer: HDR bloom + tone mapping)
+  ['examples/jsm/postprocessing/EffectComposer.js', 'EffectComposer.js'],
+  ['examples/jsm/postprocessing/Pass.js', 'Pass.js'],
+  ['examples/jsm/postprocessing/RenderPass.js', 'RenderPass.js'],
+  ['examples/jsm/postprocessing/ShaderPass.js', 'ShaderPass.js'],
+  ['examples/jsm/postprocessing/MaskPass.js', 'MaskPass.js'],
+  ['examples/jsm/postprocessing/UnrealBloomPass.js', 'UnrealBloomPass.js'],
+  ['examples/jsm/postprocessing/OutputPass.js', 'OutputPass.js'],
+  ['examples/jsm/postprocessing/SMAAPass.js', 'SMAAPass.js'],
+  ['examples/jsm/shaders/CopyShader.js', 'CopyShader.js'],
+  ['examples/jsm/shaders/LuminosityHighPassShader.js', 'LuminosityHighPassShader.js'],
+  ['examples/jsm/shaders/OutputShader.js', 'OutputShader.js'],
+  ['examples/jsm/shaders/SMAAShader.js', 'SMAAShader.js'],
+  ['examples/jsm/shaders/FXAAShader.js', 'FXAAShader.js'],
 ];
 
 fs.mkdirSync(OUT, { recursive: true });
@@ -38,7 +52,15 @@ for (const [src, dst] of FILES) {
     .replace(/from\s+['"]\.\.\/utils\/BufferGeometryUtils\.js['"]/g, "from './BufferGeometryUtils.js'")
     .replace(/from\s+['"]\.\.\/libs\/meshopt_decoder\.module\.js['"]/g, "from './meshopt_decoder.module.js'")
     .replace(/from\s+['"]\.\.\/controls\/OrbitControls\.js['"]/g, "from './OrbitControls.js'")
-    .replace(/from\s+['"]\.\.\/utils\/SkeletonUtils\.js['"]/g, "from './SkeletonUtils.js'");
+    .replace(/from\s+['"]\.\.\/utils\/SkeletonUtils\.js['"]/g, "from './SkeletonUtils.js'")
+    .replace(/from\s+['"]\.\/MaskPass\.js['"]/g, "from './MaskPass.js'")
+    .replace(/from\s+['"]\.\/Pass\.js['"]/g, "from './Pass.js'")
+    .replace(/from\s+['"]\.\.\/postprocessing\/Pass\.js['"]/g, "from './Pass.js'")
+    .replace(/from\s+['"]\.\.\/shaders\/CopyShader\.js['"]/g, "from './CopyShader.js'")
+    .replace(/from\s+['"]\.\.\/shaders\/LuminosityHighPassShader\.js['"]/g, "from './LuminosityHighPassShader.js'")
+    .replace(/from\s+['"]\.\.\/shaders\/OutputShader\.js['"]/g, "from './OutputShader.js'")
+    .replace(/from\s+['"]\.\.\/shaders\/SMAAShader\.js['"]/g, "from './SMAAShader.js'")
+    .replace(/from\s+['"]\.\/OutputPass\.js['"]/g, "from './OutputPass.js'");
   fs.writeFileSync(path.join(OUT, dst), code);
   n++;
 }

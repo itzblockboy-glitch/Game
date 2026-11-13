@@ -31,6 +31,17 @@ import {
   buildSMG,
   buildRifle,
 } from './lib/vehicles.mjs';
+import {
+  buildFerrari as buildFerrariHD,
+  buildMissionX as buildMissionXHD,
+  buildPorsche911 as buildPorsche911HD,
+  buildMustang as buildMustangHD,
+  buildPoliceCar as buildPoliceCarHD,
+  buildLamborghiniPolice as buildLamborghiniPoliceHD,
+  buildF1 as buildF1HD,
+  buildUralTruck as buildUralTruckHD,
+  buildSportBike,
+} from './lib/vehicles2.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(__dirname, '../public/models');
@@ -184,14 +195,17 @@ for (const [id, opts] of NPC_DEFS) {
 }
 
 console.log('\nBuilding vehicles …');
-emit('vehicle', 'ferrari_daytona_sp3', buildFerrari(), { scale: 1, seats: 2, topSpeed: 92, handling: 0.92, mass: 1450 });
-emit('vehicle', 'porsche_mission_x', buildMissionX(), { scale: 1, seats: 2, topSpeed: 96, handling: 0.94, mass: 1500 });
-emit('vehicle', 'porsche_911_gt3r', buildPorsche911(), { scale: 1, seats: 2, topSpeed: 90, handling: 0.97, mass: 1300 });
-emit('vehicle', 'mustang_roush_1996', buildMustang(), { scale: 1, seats: 4, topSpeed: 78, handling: 0.78, mass: 1600 });
-emit('vehicle', 'police_car', buildPoliceCar(), { scale: 1, seats: 4, topSpeed: 74, handling: 0.8, mass: 1700, siren: true });
-emit('vehicle', 'police_lambo_diablo', buildLamborghiniPolice(), { scale: 1, seats: 2, topSpeed: 94, handling: 0.9, mass: 1500, siren: true });
-emit('vehicle', 'redbull_rb22', buildF1(), { scale: 1, seats: 1, topSpeed: 118, handling: 1.0, mass: 800 });
-emit('vehicle', 'ural_4320_truck', buildUralTruck(), { scale: 1, seats: 2, topSpeed: 42, handling: 0.55, mass: 8000, heavy: true });
+// high-detail generations (smooth lofts, lathed wheels, clear-coat paint)
+emit('vehicle', 'ferrari_daytona_sp3', buildFerrariHD(), { scale: 1, seats: 2, topSpeed: 118, handling: 0.94, mass: 1450, drivetrain: 'RWD' });
+emit('vehicle', 'porsche_mission_x', buildMissionXHD(), { scale: 1, seats: 2, topSpeed: 124, handling: 0.96, mass: 1500, drivetrain: 'AWD' });
+emit('vehicle', 'porsche_911_gt3r', buildPorsche911HD(), { scale: 1, seats: 2, topSpeed: 106, handling: 0.99, mass: 1300, drivetrain: 'RWD' });
+emit('vehicle', 'mustang_roush_1996', buildMustangHD(), { scale: 1, seats: 4, topSpeed: 88, handling: 0.74, mass: 1600, drivetrain: 'RWD' });
+emit('vehicle', 'police_car', buildPoliceCarHD(), { scale: 1, seats: 4, topSpeed: 82, handling: 0.76, mass: 1700, siren: true, drivetrain: 'RWD' });
+emit('vehicle', 'police_lambo_diablo', buildLamborghiniPoliceHD(), { scale: 1, seats: 2, topSpeed: 116, handling: 0.92, mass: 1500, siren: true, drivetrain: 'AWD' });
+emit('vehicle', 'redbull_rb22', buildF1HD(), { scale: 1, seats: 1, topSpeed: 152, handling: 1.0, mass: 800, drivetrain: 'RWD' });
+emit('vehicle', 'ural_4320_truck', buildUralTruckHD(), { scale: 1, seats: 3, topSpeed: 44, handling: 0.5, mass: 8000, heavy: true, drivetrain: '6x6' });
+emit('vehicle', 'kawasaki_ninja_h2', buildSportBike('kawasaki_ninja_h2', [0.06, 0.33, 0.15]), { scale: 1, seats: 1, topSpeed: 142, handling: 1.04, mass: 260, type: 'bike', drivetrain: 'RWD' });
+emit('vehicle', 'bmw_s1000rr', buildSportBike('bmw_s1000rr', [0.75, 0.12, 0.1]), { scale: 1, seats: 1, topSpeed: 138, handling: 1.02, mass: 250, type: 'bike', drivetrain: 'RWD' });
 
 console.log('\nBuilding aircraft …');
 emit('aircraft', 'aeroplane', buildAirplane(), { scale: 1, seats: 4, topSpeed: 105, lift: 1.0, cockpit: false });

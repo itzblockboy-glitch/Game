@@ -8,3 +8,7 @@ dist/
 
 # intermediate / generated-by-tooling outputs (models are reproducible: npm run assets)
 # (public/models/*.glb are committed — they are the shipped, versioned asset pack)
+
+# android packaging toolchain (large, and contains the release signing key)
+tools/android/
+release/*.apk.idsig
