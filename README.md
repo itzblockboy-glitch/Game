@@ -111,6 +111,15 @@ A room with 4 players therefore costs roughly **~10 kbit/s** of game traffic in 
   and a procedural WebAudio layer (engines per vehicle type, tyre/impact/footstep foley,
   sirens, adaptive music).
 
+## Download / play
+
+* **Android APK (offline-ready, 15.3 MB):**
+  [release/LosSantos-1.0.0.apk](release/LosSantos-1.0.0.apk) — install with
+  "allow installs from this source", then launch **Los Santos**. Signed with APK Signature
+  Scheme v2 (self-signed dev key: Android will show the usual unknown-source prompt, which is
+  expected for a side-loaded build).
+* **Browser:** clone, then `npm install && npm run build && npm start` → http://localhost:3000
+
 ## Android APK
 
 ```bash
