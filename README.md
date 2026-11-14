@@ -114,8 +114,8 @@ A room with 4 players therefore costs roughly **~10 kbit/s** of game traffic in 
 
 ## Download / play
 
-* **Android APK (offline-ready, 15.3 MB):**
-  [release/LosSantos-1.0.1.apk](release/LosSantos-1.0.1.apk) — install with
+* **Android APK (offline-ready, 15.4 MB):**
+  [release/LosSantos-1.0.2.apk](release/LosSantos-1.0.2.apk) — install with
   "allow installs from this source", then launch **Los Santos**. Signed with APK Signature
   Scheme v2 (self-signed dev key: Android will show the usual unknown-source prompt, which is
   expected for a side-loaded build).
@@ -126,7 +126,7 @@ A room with 4 players therefore costs roughly **~10 kbit/s** of game traffic in 
 ```bash
 npm run android:setup   # fetches aapt2 + android.jar + d8/ecj (+ a JRE if needed) into tools/android/
 npm run build           # produces dist/ — the APK embeds this whole tree
-npm run apk             # → release/LosSantos-1.0.1.apk  (signed with APK Signature Scheme v2)
+npm run apk             # → release/LosSantos-1.0.2.apk  (signed with APK Signature Scheme v2)
 ```
 
 The APK is a thin, hardware-accelerated WebView host (Java sources in `android/java/…``) that serves the
@@ -140,6 +140,52 @@ signature is produced in node from a self-signed RSA-2048 key (generated once in
 `npm run check:apk` re-opens the built APK and asserts the manifest declares the app as a
 **game** (`isGame` / `appCategory=game`), the launcher activity is present, and every bundled
 asset resolves.
+
+### Why a local HTTP server instead of `file://`
+
+The WebView loads `http://127.0.0.1:<random port>/index.html`, served straight out of the
+APK by `LocalServer`. Earlier builds used `shouldInterceptRequest()` over a virtual
+`https://` origin; a real loopback server is used because a genuine `http://localhost`
+origin is the one thing every WebView provider treats as a full, `fetch()`-capable origin.
+The socket binds to loopback only, so nothing is exposed off-device, and the port is chosen
+by the OS so it never clashes.
+
+### Start-up failures are visible, never a black screen
+
+1.0.1 could come up as a black screen: `three` r187 is WebGL2-only and constructs its
+context at module top level, so a context failure aborted the bundle *before* the UI was
+ever created. Three changes make that impossible:
+
+1. `boot-guard.js` is a plain ES5 script loaded before the bundle. Any uncaught error,
+   rejected promise, or a bundle that never executes at all (12 s watchdog) paints a
+   readable card with a **Try Again** button.
+2. The renderer is constructed inside a `try`/`catch`, and `boot()` has a real `.catch()`
+   plus a 90 s watchdog — no failure can vanish into a pending promise.
+3. A CSS-only splash is painted inline in `<head>`, so the first frame is never a bare
+   black rectangle even if the stylesheet fails.
+
+`npm run check:html` enforces all of this, including that the shipped bundle still parses
+as **ES2019** (optional chaining and `??` are down-levelled) so older Android WebViews
+do not die with a syntax error.
+
+### Samsung Game Booster / Game Launcher
+
+The manifest sets every signal an app can control: `android:isGame="true"` and
+`android:appCategory="game"` on **both** `<application>` and `<activity>`, plus
+`<category android:name="android.intent.category.APP_GAMES" />` on the launcher intent.
+`npm run check:apk` verifies all of them.
+
+Samsung still may not list a **sideloaded** APK, because Game Launcher matches against
+Samsung's own store-side database rather than the manifest alone. Where that happens the
+supported fix is on the device, not in the APK:
+
+1. Install **Good Lock** from the Galaxy Store.
+2. Open **Game Booster+**, then **Game category settings**.
+3. Add **Los Santos** to the games list.
+
+Publishing through a store that categorises it as a Game (the Play Console listing must use
+category **Game**, not App) also resolves it, since the launcher then reads the store
+category.
 
 ## Architecture
 

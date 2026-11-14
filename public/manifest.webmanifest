@@ -1,7 +1,7 @@
 {
-  "name": "LOS SANTOS \u2014 Open World",
+  "name": "LOS SANTOS — Open World",
   "short_name": "Los Santos",
-  "description": "LOS SANTOS \u2014 third-person open-world action game in Three.js/WebGL with multiplayer voice chat and an offline Android build.",
+  "description": "LOS SANTOS — third-person open-world action game in Three.js/WebGL with multiplayer voice chat and an offline Android build.",
   "start_url": "/",
   "display": "fullscreen",
   "orientation": "landscape",

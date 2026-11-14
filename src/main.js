@@ -29,6 +29,7 @@ import { EffectComposer } from './vendor/EffectComposer.js';
 import { UnrealBloomPass } from './vendor/UnrealBloomPass.js';
 import { OutputPass } from './vendor/OutputPass.js';
 import { ShaderPass } from './vendor/ShaderPass.js';
+import { showFatal, humanize, describe } from './boot-error.js';
 
 // ---------------------------------------------------------------- quality tiers
 const QUALITY = [
@@ -51,16 +52,35 @@ const state = {
   elapsed: 0,
 };
 
-// ---------------------------------------------------------------- renderer
+// The bundle is executing: tell the inline guard not to report "did not start".
+window.__bootStarted = true;
+
+function removeSplash() {
+  const splash = document.getElementById('boot-splash');
+  if (splash) splash.remove();
+}
+
+// ---------------------------------------------------------------- WebGL 2 gate
+// three r187 is WebGL2-only and constructs its context eagerly. If that throws,
+// module evaluation aborts — and with no UI built yet the player sees a black
+// screen. Fail with an explanation instead.
 const canvas = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  antialias: false, // MSAA is done inside the HDR composer
-  powerPreference: 'high-performance',
-  alpha: false,
-  stencil: false,
-  depth: true,
-});
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: false, // MSAA is done inside the HDR composer
+    powerPreference: 'high-performance',
+    alpha: false,
+    stencil: false,
+    depth: true,
+  });
+} catch (err) {
+  removeSplash();
+  const msg = humanize(err);
+  showFatal(msg.title, msg.detail, describe(err));
+  throw err;
+}
 renderer.setClearColor(0xbfd8ea);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 // ACES + a slightly filmic exposure is the biggest single "realism" lever
@@ -77,10 +97,18 @@ const camera = new THREE.PerspectiveCamera(64, innerWidth / innerHeight, 0.25, 3
 // ---------------------------------------------------------------- cinematic render pipeline
 // HDR (half-float) render target → bloom → ACES tone map → sRGB output.
 // Quality tiers switch post off entirely for low-end devices.
-const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, {
-  type: THREE.HalfFloatType,
-  samples: 2,
-}));
+// Some mobile GL drivers refuse a half-float + multisampled render target. That
+// must degrade to a plain LDR target rather than killing the whole boot.
+let composer;
+try {
+  composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, {
+    type: THREE.HalfFloatType,
+    samples: 2,
+  }));
+} catch (err) {
+  console.warn('HDR composer unavailable, falling back to LDR', err);
+  composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.UnsignedByteType }));
+}
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.32, 0.62, 0.86);
@@ -1781,9 +1809,36 @@ function frame(now) {
 
 // ---------------------------------------------------------------- go
 setupTouch();
-boot().then(() => {
-  requestAnimationFrame(frame);
-});
+window.__bootReady = false;
+// A boot that never settles is indistinguishable from a black screen. Give it a
+// generous deadline and explain if the device simply cannot load in time.
+const bootWatchdog = setTimeout(() => {
+  if (window.__bootReady || window.__game?.state?.started) return;
+  removeSplash();
+  showFatal(
+    'Loading is taking much longer than expected',
+    'The city has not finished loading on this device. Close other apps to free '
+      + 'memory and reopen Los Santos, or try the Performance graphics setting.',
+    'boot did not complete within 90s'
+  );
+}, 90000);
+
+boot()
+  .then(() => {
+    window.__bootReady = true;
+    clearTimeout(bootWatchdog);
+    removeSplash();
+    requestAnimationFrame(frame);
+  })
+  .catch((err) => {
+    // Without this catch the promise can still be pending forever on a slow
+    // device — and any rejection vanishes, leaving a black screen with no clue.
+    clearTimeout(bootWatchdog);
+    removeSplash();
+    const msg = humanize(err);
+    showFatal(msg.title, msg.detail, describe(err));
+    console.error('boot failed', err);
+  });
 
 // expose for debugging / automation
 window.__hotswap = onHotSwap;

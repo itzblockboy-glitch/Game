@@ -16,19 +16,47 @@
       content="LOS SANTOS — a low-poly third-person open-world action game in Three.js / WebGL with multiplayer voice chat and ultra-low data use."
     />
     <title>LOS SANTOS · Open World</title>
-    <link rel="preconnect" href="/" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="/src/styles.css" />
+    <style>
+      /* Painted before the stylesheet/bundle arrive so the first frame is never a
+         bare black rectangle. The real loading UI replaces it. */
+      html, body { margin: 0; height: 100%; background: #06080d; color: #e8ecf5;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+      #boot-splash { position: fixed; inset: 0; z-index: 2147483000; display: flex;
+        align-items: center; justify-content: center; flex-direction: column; gap: 18px;
+        background: radial-gradient(120% 120% at 50% 0%, #152844, #070a11 62%, #03050a); }
+      #boot-splash .bs-logo { font-size: clamp(26px, 7vw, 54px); font-weight: 800;
+        letter-spacing: .16em; text-shadow: 0 8px 40px rgba(255,194,71,.22); }
+      #boot-splash .bs-logo span { color: #ffc247; }
+      #boot-splash .bs-bar { width: min(300px, 62vw); height: 4px; border-radius: 99px;
+        background: #ffffff1a; overflow: hidden; }
+      #boot-splash .bs-bar i { display: block; height: 100%; width: 40%;
+        background: linear-gradient(90deg, #ffc247, #ff7a45); border-radius: 99px;
+        animation: bs-slide 1.15s ease-in-out infinite; }
+      @keyframes bs-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } }
+      #boot-splash .bs-text { font-size: 11px; letter-spacing: .28em; text-transform: uppercase;
+        opacity: .55; }
+      /* #boot-error paints itself with inline styles — deliberately NOT
+         hidden here, or a boot failure would be invisible again. */
+    </style>
   </head>
   <body>
     <div id="app"><canvas id="scene"></canvas></div>
     <div id="ui"></div>
 
+    <div id="boot-splash">
+      <div class="bs-logo">LOS <span>SANTOS</span></div>
+      <div class="bs-bar"><i></i></div>
+      <div class="bs-text">Booting engine</div>
+    </div>
+
     <noscript>This game needs JavaScript and WebGL 2.</noscript>
 
+    <script src="/boot-guard.js"></script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

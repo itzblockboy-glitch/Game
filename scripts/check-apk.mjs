@@ -78,6 +78,33 @@ for (const perm of ['INTERNET', 'RECORD_AUDIO']) {
   else bad(`missing permission ${perm}`);
 }
 
+// ---------------------------------------------------------------- game category
+// Samsung's Game Launcher / Game Booster read different signals, and a sideloaded
+// APK that only sets one of them is frequently not treated as a game. Assert all
+// of the ones we control are present.
+console.log('\nGame categorisation\u2026');
+let manifestDump = '';
+try {
+  manifestDump = execFileSync(path.join(TOOLS, 'aapt2'), ['dump', 'xmltree', APK, '--file', 'AndroidManifest.xml']).toString();
+} catch (err) {
+  bad(`aapt2 xmltree failed: ${err.message}`);
+}
+const hasAttr = (name) => new RegExp(`A: android:${name}\\(0x0101[0-9a-f]+\\)=\\(type 0x12\\)0xffffffff`).test(manifestDump)
+  || new RegExp(`android:${name}[^\\n]*=(TRUE|true|0xffffffff)`).test(manifestDump);
+// android:appCategory is an enum: 0 = GAME, 1 = AUDIO, 2 = VIDEO, 3 = IMAGE,
+// 4 = SOCIAL, 5 = NEWS, 6 = MAPS, 7 = PRODUCTIVITY, 8 = ACCESSIBILITY.
+// aapt2 renders it as the raw ordinal, so 0 means GAME.
+const appCategoryValues = [...manifestDump.matchAll(/android:appCategory\(0x01010545\)=(-?\d+)/g)].map((m) => Number(m[1]));
+const checks = [
+  ['application android:isGame="true"', hasAttr('isGame')],
+  ['android:appCategory = 0 (CATEGORY_GAME)', appCategoryValues.length > 0 && appCategoryValues.every((v) => v === 0)],
+  ['activity declares appCategory=game too', appCategoryValues.length >= 2],
+  ['category android.intent.category.APP_GAMES', /intent\.category\.APP_GAMES/i.test(manifestDump)],
+  ['isGame set on both application and activity', (manifestDump.match(/isGame/g) || []).length >= 2],
+];
+for (const [label, ok] of checks) { ok ? ok_(label) : bad(label); }
+function ok_(m) { console.log(`  \u2713 ${m}`); }
+
 // ---------------------------------------------------------------- bytecode verification
 console.log('\nBytecode (invoke targets)\u2026');
 const dexPath = path.join(WORK, 'classes.dex');
