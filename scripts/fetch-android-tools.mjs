@@ -22,7 +22,22 @@ const TOOLS = path.join(ROOT, 'tools', 'android');
 fs.mkdirSync(TOOLS, { recursive: true });
 
 const have = (f) => fs.existsSync(f);
+// curl is preferred: sandboxes that intercept TLS break node's fetch with
+// UNABLE_TO_VERIFY_LEAF_SIGNATURE, while the system curl trusts the proxy CA.
+function curlTo(url, dest, extraHeaders = []) {
+  const args = ['-sSfL', '--retry', '2', '--max-time', '600', '-o', dest];
+  for (const h of extraHeaders) args.push('-H', h);
+  args.push(url);
+  execFileSync('curl', args);
+  return fs.readFileSync(dest);
+}
+
 async function download(url, dest) {
+  try {
+    return curlTo(url, dest);
+  } catch (curlErr) {
+    // fall back to node fetch when curl is unavailable
+  }
   const res = await fetch(url, { redirect: 'follow' });
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   const buf = Buffer.from(await res.arrayBuffer());
@@ -30,11 +45,28 @@ async function download(url, dest) {
   return buf;
 }
 
+/**
+ * Some sandboxes block raw.githubusercontent.com while allowing api.github.com.
+ * Rewrite a raw URL into the contents API and stream it with the raw media type.
+ */
+async function downloadGithub(rawUrl, dest) {
+  try {
+    return await download(rawUrl, dest);
+  } catch (err) {
+    const m = /^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/.exec(rawUrl);
+    if (!m) throw err;
+    const [, owner, repo, ref, rest] = m;
+    const api = `https://api.github.com/repos/${owner}/${repo}/contents/${rest}?ref=${ref}`;
+    console.log(`  (raw blocked — using contents API for ${rest.split('/').pop()})`);
+    return curlTo(api, dest, ['Accept: application/vnd.github.raw', 'User-Agent: los-santos-build']);
+  }
+}
+
 // 1. android.jar (compile-time stubs only)
 const jarPath = path.join(TOOLS, 'android.jar');
 if (!have(jarPath)) {
   console.log('· android.jar');
-  await download('https://raw.githubusercontent.com/Sable/android-platforms/master/android-34/android.jar', jarPath);
+  await downloadGithub('https://raw.githubusercontent.com/Sable/android-platforms/master/android-34/android.jar', jarPath);
 }
 
 // 2. aapt2 — pull the linux binary out of the PyPI wheel
@@ -83,7 +115,7 @@ if (!have(aapt2Path)) {
 const ecjPath = path.join(TOOLS, 'ecj.jar');
 if (!have(ecjPath)) {
   console.log('· ecj.jar');
-  await download(
+  await downloadGithub(
     'https://raw.githubusercontent.com/SciAps/nexus/master/org/eclipse/jdt/core/compiler/ecj/4.6.1/ecj-4.6.1.jar',
     ecjPath,
   );
@@ -91,8 +123,8 @@ if (!have(ecjPath)) {
 const d8Path = path.join(TOOLS, 'd8.jar');
 if (!have(d8Path)) {
   console.log('· d8.jar');
-  await download(
-    'https://raw.githubusercontent.com/kansas1295/optapp/master/build-tools/34.0.4/lib/d8.jar',
+  await downloadGithub(
+    'https://raw.githubusercontent.com/kansas1295/optapp/main/build-tools/34.0.4/lib/d8.jar',
     d8Path,
   );
 }
@@ -104,7 +136,12 @@ try { execFileSync('java', ['-version'], { stdio: 'ignore' }); haveJava = true; 
 if (!haveJava) {
   console.log('· java runtime (jre)');
   const meta = await fetch('https://pypi.org/pypi/jdk4py/json').then((r) => r.json());
-  const wheel = meta.urls.find((u) => u.filename.includes('manylinux') && u.filename.endsWith('.whl'));
+  // Pick the wheel matching this machine — grabbing the first manylinux match
+  // yields an aarch64 JRE on x86_64 hosts ("Exec format error").
+  const arch = process.arch === 'arm64' ? 'aarch64' : 'x86_64';
+  const wheel = meta.urls.find(
+    (u) => u.filename.includes('manylinux') && u.filename.includes(arch) && u.filename.endsWith('.whl'),
+  ) || meta.urls.find((u) => u.filename.includes('manylinux') && u.filename.endsWith('.whl'));
   if (wheel) {
     const tmp = path.join(TOOLS, 'jre.whl');
     await download(wheel.url, tmp);

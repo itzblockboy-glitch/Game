@@ -24,7 +24,10 @@ import crypto from 'node:crypto';
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const AND = path.join(ROOT, 'android');
 const DIST = path.join(ROOT, 'dist');
-const OUT = path.join(ROOT, 'release', 'LosSantos-1.0.1.apk');
+// version is the single source of truth in android/AndroidManifest.xml
+const MANIFEST = fs.readFileSync(path.join(ROOT, 'android', 'AndroidManifest.xml'), 'utf8');
+const VER = (/android:versionName="([^"]+)"/.exec(MANIFEST) || [, '1.0.0'])[1];
+const OUT = path.join(ROOT, 'release', `LosSantos-${VER}.apk`);
 const WORK = fs.mkdtempSync(path.join(os.tmpdir(), 'ls-apk-'));
 
 const TOOLS = process.env.LS_ANDROID_TOOLS || path.join(ROOT, 'tools', 'android');
@@ -223,7 +226,7 @@ function have(file) {
 // app.js, styles.css, draco/ and models/ all resolve relative to file://
 const assetsGame = path.join(WORK, 'assets', 'game');
 fs.mkdirSync(assetsGame, { recursive: true });
-const skip = new Set(['LosSantos-1.0.0.apk', 'LosSantos-1.0.1.apk']);
+const skip = new Set(fs.readdirSync(DIST).filter((n) => n.endsWith('.apk')).concat(['LosSantos-1.0.0.apk', 'LosSantos-1.0.1.apk', 'LosSantos-1.0.2.apk']));
 const copy = (from, to) => {
   for (const e of fs.readdirSync(from, { withFileTypes: true })) {
     if (skip.has(e.name)) continue;
@@ -235,30 +238,36 @@ const copy = (from, to) => {
 };
 copy(DIST, assetsGame);
 
-// rewrite the built index.html so every absolute URL works from file://android_asset
+// The build is served by LocalServer over http://127.0.0.1:<port>/, so root-
+// absolute URLs (/app.js, /models/…) resolve correctly and no <base> rewrite is
+// needed. Keep them absolute: a relative <base> breaks fetch() for the models.
 const idxPath = path.join(assetsGame, 'index.html');
 let html = fs.readFileSync(idxPath, 'utf8');
-html = html
-  .replace(/href="\/manifest.webmanifest"/, 'href="manifest.webmanifest"')
-  .replace(/href="\/styles.css"/, 'href="styles.css"')
-  .replace(/src="\/app\.js"/, 'src="app.js"')
-  .replace('<head>', '<head>\n    <base href="./" />');
+// Drop the <base> if an older build already inserted one.
+html = html.replace(/\s*<base href="[^"]*"\s*\/?>/i, '');
 fs.writeFileSync(idxPath, html);
 
-// absolute fetches (/models/…, /draco/…) need to resolve relative to the asset dir
-let appjs = fs.readFileSync(path.join(assetsGame, 'app.js'), 'utf8');
-appjs = appjs
-  .replace(/(["'`])\/models\//g, '$1models/')
-  .replace(/(["'`])\/draco\//g, '$1draco/')
-  .replace(/(["'`])\/vendor\//g, '$1vendor/');
-fs.writeFileSync(path.join(assetsGame, 'app.js'), appjs);
+// sanity: the HTML must reference files that actually shipped
+const requiredAssets = ['app.js', 'styles.css', 'index.html', 'boot-guard.js', 'models/manifest.json'];
+for (const asset of requiredAssets) {
+  if (!fs.existsSync(path.join(assetsGame, asset))) {
+    throw new Error(`build-apk: ${asset} missing from the bundle — the app would boot to a blank screen`);
+  }
+}
+if (!/<script[^>]+src=["']\/boot-guard\.js["']/.test(html)) {
+  throw new Error('build-apk: index.html does not load /boot-guard.js');
+}
+if (!/<script[^>]+type=["']module["'][^>]+src=["']\/app\.js["']/.test(html)) {
+  throw new Error('build-apk: index.html does not load /app.js as a module');
+}
 
 // the manifest stores absolute /models/... paths; make them relative to the doc
 const manPath = path.join(assetsGame, 'models', 'manifest.json');
 if (fs.existsSync(manPath)) {
   const man = JSON.parse(fs.readFileSync(manPath, 'utf8'));
+  // Served over http, so keep the paths as authored (root-absolute is fine).
   for (const m of man.models || []) {
-    if (m.file && m.file.startsWith('/')) m.file = m.file.slice(1);
+    if (m.file && m.file.startsWith('models/')) m.file = '/' + m.file;
   }
   fs.writeFileSync(manPath, JSON.stringify(man));
 }

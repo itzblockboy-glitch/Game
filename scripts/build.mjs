@@ -16,11 +16,18 @@ fs.rmSync(DIST, { recursive: true, force: true });
 fs.mkdirSync(path.join(DIST, 'models'), { recursive: true });
 fs.mkdirSync(path.join(DIST, 'draco'), { recursive: true });
 
+// The inline boot guard must exist as a real file in dist/ before index.html
+// references it — a 404 here is one of the ways the page can come up empty.
+fs.copyFileSync(path.join(ROOT, 'src/boot-guard.js'), path.join(DIST, 'boot-guard.js'));
+
 const result = await esbuild.build({
   entryPoints: [path.join(ROOT, 'src/main.js')],
   bundle: true,
   format: 'esm',
-  target: 'es2020',
+  // es2019 (not es2020): optional chaining / nullish coalescing were introduced
+  // in Chromium 80. Down-levelling them means the bundle still *parses* on much
+  // older Android WebViews, instead of dying as a SyntaxError with a black page.
+  target: 'es2019',
   minify: true,
   sourcemap: false,
   legalComments: 'none',
