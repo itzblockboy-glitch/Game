@@ -14,13 +14,19 @@ import {
 
 const _taskCache = new WeakMap();
 
-const WASM_BIN_URL = new URL( '../libs/draco/draco_decoder.wasm', import.meta.url ).toString();
-const WASM_JS_URL = new URL( '../libs/draco/draco_wasm_wrapper.js', import.meta.url ).toString();
-const JS_URL = new URL( '../libs/draco/draco_decoder.js', import.meta.url ).toString();
+// Upstream derives these from `import.meta.url`, which esbuild lowers to an
+// empty object when targeting es2019 — `new URL( path, undefined )` then throws
+// "TypeError: Invalid URL" at module scope and takes the whole bundle down
+// before any UI exists. The game always calls setDecoderPath() with its own
+// bundled copies, so these defaults are only a fallback; keep them relative to
+// the document origin instead of the (unavailable) module URL.
+const WASM_BIN_URL = '/draco/draco_decoder.wasm';
+const WASM_JS_URL = '/draco/draco_wasm_wrapper.js';
+const JS_URL = '/draco/draco_decoder.js';
 
 const DRACO_GLTF_CONFIG = {
-	js: new URL( '../libs/draco/gltf/draco_wasm_wrapper.js', import.meta.url ).toString(),
-	wasm: new URL( '../libs/draco/gltf/draco_decoder.wasm', import.meta.url ).toString(),
+	js: '/draco/draco_wasm_wrapper.js',
+	wasm: '/draco/draco_decoder.wasm',
 };
 
 /**

@@ -115,7 +115,7 @@ A room with 4 players therefore costs roughly **~10 kbit/s** of game traffic in 
 ## Download / play
 
 * **Android APK (offline-ready, 15.4 MB):**
-  [release/LosSantos-1.0.2.apk](release/LosSantos-1.0.2.apk) — install with
+  [release/LosSantos-1.0.3.apk](release/LosSantos-1.0.3.apk) — install with
   "allow installs from this source", then launch **Los Santos**. Signed with APK Signature
   Scheme v2 (self-signed dev key: Android will show the usual unknown-source prompt, which is
   expected for a side-loaded build).
@@ -126,7 +126,7 @@ A room with 4 players therefore costs roughly **~10 kbit/s** of game traffic in 
 ```bash
 npm run android:setup   # fetches aapt2 + android.jar + d8/ecj (+ a JRE if needed) into tools/android/
 npm run build           # produces dist/ — the APK embeds this whole tree
-npm run apk             # → release/LosSantos-1.0.2.apk  (signed with APK Signature Scheme v2)
+npm run apk             # → release/LosSantos-1.0.3.apk  (signed with APK Signature Scheme v2)
 ```
 
 The APK is a thin, hardware-accelerated WebView host (Java sources in `android/java/…``) that serves the
@@ -164,9 +164,19 @@ ever created. Three changes make that impossible:
 3. A CSS-only splash is painted inline in `<head>`, so the first frame is never a bare
    black rectangle even if the stylesheet fails.
 
-`npm run check:html` enforces all of this, including that the shipped bundle still parses
-as **ES2019** (optional chaining and `??` are down-levelled) so older Android WebViews
-do not die with a syntax error.
+`npm run check:html` enforces all of this. It also **evaluates the bundle** in a VM and
+fails on any unhandled module-scope throw — that is what catches the class of bug behind
+the 1.0.2 "Invalid URL" crash. It additionally checks that the bundle still parses as
+**ES2019** (optional chaining and `??` are down-levelled) so older Android WebViews do not
+die with a syntax error.
+
+> **Why 1.0.2 failed with `TypeError: Invalid URL`.** Down-levelling to ES2019 rewrote
+> `import.meta.url` (an ES2020 feature) to an empty object. `three`'s bundled
+> `DRACOLoader` evaluates `new URL(path, import.meta.url)` at **module scope**, so
+> `new URL(path, undefined)` threw before any UI existed. The vendored loader now uses
+> plain `/draco/…` defaults (the game always calls `setDecoderPath()` anyway), the build
+> refuses to emit a bundle containing `new URL(x, undefined)`, and `check:html` runs the
+> bundle to prove it reaches module scope.
 
 ### Samsung Game Booster / Game Launcher
 

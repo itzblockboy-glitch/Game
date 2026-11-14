@@ -38,6 +38,20 @@ const result = await esbuild.build({
   alias: { three: path.join(ROOT, 'src/vendor/three.module.js') },
 });
 
+// import.meta is an ES2020 feature. Down-levelling to es2019 rewrites it to an
+// empty object, so `new URL(path, import.meta.url)` silently becomes
+// `new URL(path, undefined)` — a TypeError at module scope that kills the whole
+// bundle before the UI exists (that was the 1.0.2 "Invalid URL" black screen).
+// Refuse to ship a bundle that contains that pattern.
+const appJs = fs.readFileSync(path.join(DIST, 'app.js'), 'utf8');
+if (/new URL\([^)]*,\s*(\{\s*\}\.url|void 0|undefined)\s*\)/.test(appJs)) {
+  throw new Error(
+    'build: the bundle contains new URL(x, import.meta.url) lowered to undefined — '
+    + 'this throws "TypeError: Invalid URL" at load. Patch the vendor file to use a '
+    + 'relative path instead of import.meta.url.',
+  );
+}
+
 await esbuild.build({
   entryPoints: [path.join(ROOT, 'src/styles.css')],
   bundle: true,

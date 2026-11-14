@@ -29,7 +29,7 @@ import { EffectComposer } from './vendor/EffectComposer.js';
 import { UnrealBloomPass } from './vendor/UnrealBloomPass.js';
 import { OutputPass } from './vendor/OutputPass.js';
 import { ShaderPass } from './vendor/ShaderPass.js';
-import { showFatal, humanize, describe } from './boot-error.js';
+import { showFatal, humanize, describe, BootAbort } from './boot-error.js';
 
 // ---------------------------------------------------------------- quality tiers
 const QUALITY = [
@@ -65,22 +65,34 @@ function removeSplash() {
 // module evaluation aborts — and with no UI built yet the player sees a black
 // screen. Fail with an explanation instead.
 const canvas = document.getElementById('scene');
-let renderer;
-try {
-  renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: false, // MSAA is done inside the HDR composer
-    powerPreference: 'high-performance',
-    alpha: false,
-    stencil: false,
-    depth: true,
-  });
-} catch (err) {
-  removeSplash();
-  const msg = humanize(err);
-  showFatal(msg.title, msg.detail, describe(err));
-  throw err;
+let renderer = null;
+let rendererError = null;
+// Try progressively more conservative context attributes. A hard
+// `high-performance` request is refused outright by some mobile GPU drivers even
+// though the device renders the game perfectly well with 'default'.
+const RENDERER_OPTIONS = [
+  { antialias: false, powerPreference: 'high-performance', alpha: false, stencil: false, depth: true },
+  { antialias: false, powerPreference: 'default', alpha: false, stencil: false, depth: true },
+  { antialias: false, alpha: false, stencil: false, depth: true, failIfMajorPerformanceCaveat: false },
+  { antialias: false, alpha: false },
+];
+for (const opts of RENDERER_OPTIONS) {
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, ...opts });
+    break;
+  } catch (err) {
+    rendererError = err;
+  }
 }
+if (!renderer) {
+  // Stop cleanly rather than rethrowing: a throw here aborts module evaluation,
+  // so nothing below runs and the guard can only report a raw stack trace.
+  removeSplash();
+  const info = humanize(rendererError);
+  showFatal(info.title, info.detail, describe(rendererError));
+  throw new BootAbort(rendererError);
+}
+if (rendererError) console.warn('renderer: fell back to default context attributes', rendererError);
 renderer.setClearColor(0xbfd8ea);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 // ACES + a slightly filmic exposure is the biggest single "realism" lever

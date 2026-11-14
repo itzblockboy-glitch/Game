@@ -10,6 +10,7 @@
  */
 // Verify the HTML contract: splash present, guard before module, no leaking icons
 import fs from 'node:fs';
+import vm from 'node:vm';
 import path from 'node:path';
 
 const DIST = path.join(process.cwd(), 'dist', 'index.html');
@@ -43,6 +44,70 @@ try {
 } catch (e) {
   checks.push(['bundle parses as ES2019 (old WebView safe)', false]);
   console.log('    es2019 violation:', String(e.message || e).split('\n')[0]);
+}
+
+// ---------------------------------------------------------------- module scope
+// The 1.0.2 "TypeError: Invalid URL" crash happened at MODULE SCOPE: DRACOLoader
+// evaluated `new URL(path, import.meta.url)` where import.meta had been lowered
+// to an empty object, so the entire bundle died before any UI existed. Grepping
+// for the pattern is not enough — evaluate the bundle and see what it throws.
+// The VM has no GPU, so a WebGL error is an acceptable stop; anything else is not.
+const appSrc = fs.readFileSync(path.join(process.cwd(), 'dist', 'app.js'), 'utf8');
+const scopeError = (() => {
+  const el = (id) => ({
+    id, style: {}, dataset: {}, children: [],
+    classList: { add() {}, remove() {}, toggle() {}, contains() { return true; } },
+    setAttribute() {}, getAttribute() { return null; }, appendChild() {}, remove() {},
+    addEventListener() {}, removeEventListener() {},
+    querySelector() { return el('x'); }, querySelectorAll() { return []; },
+    getContext() { return null; }, width: 100, height: 100,
+    innerHTML: '', textContent: '', offsetParent: null,
+  });
+  const document = {
+    body: el('body'), documentElement: el('html'),
+    getElementById: (id) => el(id), createElement: () => el('new'),
+    querySelector: () => el('q'), querySelectorAll: () => [],
+    addEventListener() {}, removeEventListener() {}, exitPointerLock() {},
+  };
+  const win = {
+    document, innerWidth: 1280, innerHeight: 720, devicePixelRatio: 1,
+    location: { href: 'http://127.0.0.1:1/index.html', origin: 'http://127.0.0.1:1', search: '', reload() {} },
+    navigator: { userAgent: 'check', mediaDevices: { getUserMedia: async () => { throw new Error('no media'); } } },
+    addEventListener() {}, removeEventListener() {},
+    requestAnimationFrame: () => 0, cancelAnimationFrame() {},
+    matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }),
+    performance: { now: () => 0 },
+    localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+    indexedDB: { open: () => ({}) },
+    setTimeout, clearTimeout, setInterval, clearInterval, console,
+    URL, URLSearchParams,
+    Blob: class {}, Worker: class {},
+    fetch: async () => { throw new Error('no network'); },
+    AudioContext: class { constructor() { throw new Error('no audio'); } },
+    RTCPeerConnection: class {}, WebSocket: class {},
+  };
+  win.window = win; win.self = win; win.globalThis = win;
+  try {
+    vm.runInContext(appSrc, vm.createContext(win), { filename: 'app.js', timeout: 20000 });
+    return null;
+  } catch (e) {
+    return e;
+  }
+})();
+{
+  const msg = scopeError ? String(scopeError.message || scopeError) : '';
+  // A VM has no GPU, so a *handled* WebGL abort is the expected stopping point.
+  // It only counts as handled if the bundle raised BootAbort (meaning it already
+  // showed the player a readable card). Anything else is an unhandled crash.
+  const handled = !!(scopeError && scopeError.__bootAborted);
+  const onlyGpu = /webgl|context|creating webgl/i.test(msg);
+  checks.push([
+    'bundle reaches module scope without an unhandled crash',
+    !scopeError || (handled && onlyGpu),
+  ]);
+  if (scopeError && !(handled && onlyGpu)) {
+    console.log('    unhandled module-scope crash:', (msg || String(scopeError)).slice(0, 140));
+  }
 }
 
 // the guard must be ES5-safe: an old WebView that cannot parse it would be the

@@ -11,6 +11,21 @@
  * CSS class names, no THREE, no UI instance).
  */
 
+/**
+ * Thrown when boot cannot continue but the reason has already been shown to the
+ * player. Carrying a marker lets the guard (and the build check) tell a handled
+ * failure apart from an unexpected one. This is a real Error so stack/message
+ * handling stays normal.
+ */
+export class BootAbort extends Error {
+  constructor(cause) {
+    super('boot aborted: ' + (cause && cause.message ? cause.message : String(cause)));
+    this.name = 'BootAbort';
+    this.__bootAborted = true;
+    this.cause = cause;
+  }
+}
+
 let shown = false;
 
 /** Cheap capability probe used before constructing the renderer. */
@@ -138,6 +153,14 @@ export function humanize(err) {
       title: 'A game file could not be loaded',
       detail: 'The bundled assets are missing or unreadable. Reinstall the app, '
         + 'or re-download the APK if you side-loaded it.',
+    };
+  }
+  if (low.includes('invalid url') || low.includes('syntaxerror') || low.includes('unexpected token')) {
+    return {
+      title: 'The game bundle is damaged',
+      detail: 'A script failed to parse or referenced a bad URL, so the game could not '
+        + 'start. Reinstall Los Santos. If you are a developer, re-run `npm run build` '
+        + 'and `npm run check:html`.',
     };
   }
   if (low.includes('module') || low.includes('import') || low.includes('mime')) {
