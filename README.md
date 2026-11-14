@@ -115,7 +115,7 @@ A room with 4 players therefore costs roughly **~10 kbit/s** of game traffic in 
 ## Download / play
 
 * **Android APK (offline-ready, 15.3 MB):**
-  [release/LosSantos-1.0.0.apk](release/LosSantos-1.0.0.apk) — install with
+  [release/LosSantos-1.0.1.apk](release/LosSantos-1.0.1.apk) — install with
   "allow installs from this source", then launch **Los Santos**. Signed with APK Signature
   Scheme v2 (self-signed dev key: Android will show the usual unknown-source prompt, which is
   expected for a side-loaded build).
@@ -124,19 +124,22 @@ A room with 4 players therefore costs roughly **~10 kbit/s** of game traffic in 
 ## Android APK
 
 ```bash
-npm run android:setup   # fetches aapt2 + android.jar + smali (+ a JRE if needed) into tools/android/
+npm run android:setup   # fetches aapt2 + android.jar + d8/ecj (+ a JRE if needed) into tools/android/
 npm run build           # produces dist/ — the APK embeds this whole tree
-npm run apk             # → release/LosSantos-1.0.0.apk  (signed with APK Signature Scheme v2)
+npm run apk             # → release/LosSantos-1.0.1.apk  (signed with APK Signature Scheme v2)
 ```
 
-The APK is a thin, hardware-accelerated WebView host (`android/smali/…`) that serves the
+The APK is a thin, hardware-accelerated WebView host (Java sources in `android/java/…``) that serves the
 bundled `dist/` build from a virtual `https://appassets.androidplatform.net/assets/game/`
 origin — required because Chromium refuses `fetch()` on `file://`, which the game needs for
 its glTF models. Everything ships inside the APK, so it plays fully offline; multiplayer and
 WebRTC voice connect when the device is online. No Android SDK is involved: `aapt2` links the
-resources, `smali` assembles the DEX, and the v2 signature is produced in node from a
-self-signed RSA-2048 key (generated once into `tools/android/keys/`). Verify with any
-`apksigner verify` / `apksigtool verify`.
+resources, `ecj` compiles the Java against `android.jar`, `d8` produces the DEX, and the v2
+signature is produced in node from a self-signed RSA-2048 key (generated once into
+`tools/android/keys/`). Verify with any `apksigner verify` / `apksigtool verify`.
+`npm run check:apk` re-opens the built APK and asserts the manifest declares the app as a
+**game** (`isGame` / `appCategory=game`), the launcher activity is present, and every bundled
+asset resolves.
 
 ## Architecture
 

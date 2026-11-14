@@ -52,6 +52,9 @@ function detectBoneMap(root) {
   return { bones: found, isMixamo: Object.values(found).some((b) => /mixamorig/i.test(b.name)) };
 }
 
+// the ocean mesh surface (see OCEAN_Y in world.js) — terrain below this is water
+const OCEAN_LEVEL = -0.15;
+
 const _v = new THREE.Vector3();
 const _v2 = new THREE.Vector3();
 
@@ -219,6 +222,11 @@ export class Character {
    * @param {World} world
    */
   update(dt, input, world) {
+    // Defensive: the controller is integrated explicitly, so a stalled frame
+    // (tab backgrounded, GC pause, first frame after load) must never hand it a
+    // huge step. Without this a single 300 ms frame drops a standing player
+    // straight through the ground clamp and into the water band.
+    dt = Math.min(0.05, Math.max(0, dt || 0));
     if (this.driveVehicle) {
       this.root.visible = false;
       return;
@@ -251,43 +259,62 @@ export class Character {
       this.velocity.z *= Math.max(0, 1 - 12 * dt);
     }
 
-    // gravity + jump (skipped while floating)
-    const inWater = this.position.y < this.WATERLINE + 0.05;
-    if (!inWater) this.velocity.y -= 26 * dt;
-    else this.velocity.y = Math.max(this.velocity.y, -1.2);
-    if (input.jump && this.onGround) {
+    // ------------------------------------------------------ surface sample
+    // The floor is not a constant: the city sits a few cm above y=0 while the
+    // terrain dips under the sea surface (OCEAN_LEVEL) out at the west shoreline,
+    // and off the map edge there is no ground at all. Sample it rather than
+    // assuming, so the beach, the shallows and open water all behave.
+    const groundY = world && typeof world.groundAt === 'function'
+      ? world.groundAt(this.position.x, this.position.z)
+      : 0.02;
+    const inWater = groundY === null || groundY < OCEAN_LEVEL;
+    this._surface = inWater ? 'water' : 'land';
+    this._waterY = groundY;
+
+    // jump (must be read before the land clamp below clears velocity.y)
+    if (input.jump && this.onGround && !inWater) {
       this.velocity.y = 9.2;
       this.onGround = false;
     }
 
-    // integrate
-    this.position.addScaledVector(this.velocity, dt);
-
-    // ground / water
-    const swimming = this.position.y < -0.2;
-    if (swimming) {
-      // buoyancy: settle at the waterline, head above the surface
-      this.velocity.y += (this.WATERLINE - this.position.y) * 260 * dt;
-      this.velocity.y *= Math.pow(0.05, dt);
-      this.position.y = THREE.MathUtils.clamp(this.position.y, -2.2, this.WATERLINE);
+    if (inWater) {
+      // buoyancy owns vertical motion: a damped spring toward the waterline, so
+      // the character bobs with their head at the surface instead of sinking.
+      const target = this.WATERLINE;
+      this.velocity.y += (target - this.position.y) * 32 * dt;
+      this.velocity.y *= Math.pow(0.12, dt);
+      this.velocity.y = THREE.MathUtils.clamp(this.velocity.y, -3, 2.4);
+      this.position.y += this.velocity.y * dt;
+      this.position.y = Math.min(this.position.y, this.WATERLINE + 0.06); // never ride up onto the surface
+      this.position.y = Math.max(this.position.y, -2.2);                   // sea floor
+      this.position.addScaledVector({ x: this.velocity.x, y: 0, z: this.velocity.z }, dt);
       this.onGround = false;
-      this.moveState = 'swim';
       if (this.moving) {
         this.velocity.x += dirX * 3.2 * dt * 12;
         this.velocity.z += dirZ * 3.2 * dt * 12;
         this.velocity.x = THREE.MathUtils.clamp(this.velocity.x, -2.6, 2.6);
         this.velocity.z = THREE.MathUtils.clamp(this.velocity.z, -2.6, 2.6);
       }
-    } else if (this.position.y <= 0.02) {
-      const wasAir = !this.onGround;
-      this.position.y = 0.02;
-      if (wasAir && this.velocity.y < -12) {
-        this.landedImpact = Math.min(1, -this.velocity.y / 22);
-      }
-      this.velocity.y = 0;
-      this.onGround = true;
     } else {
-      this.onGround = false;
+      const wasAir = !this.onGround;
+      this.velocity.y -= 26 * dt;
+      this.position.addScaledVector(this.velocity, dt);
+      if (this.position.y <= groundY + 0.02) {
+        // a jump fired this frame must not be swallowed by the floor snap
+        const rising = this.velocity.y > 0;
+        this.position.y = groundY + 0.02;
+        if (!rising) {
+          if (wasAir && this.velocity.y < -12) {
+            this.landedImpact = Math.min(1, -this.velocity.y / 22);
+          }
+          this.velocity.y = 0;
+          this.onGround = true;
+        } else {
+          this.onGround = false;
+        }
+      } else {
+        this.onGround = false;
+      }
     }
 
     // building collision
@@ -314,7 +341,7 @@ export class Character {
     // speed & state
     const horizSpeed = Math.hypot(this.velocity.x, this.velocity.z);
     this.speed = horizSpeed;
-    if (swimming) this.moveState = 'swim';
+    if (this._surface === 'water') this.moveState = 'swim';
     else if (!this.onGround) this.moveState = this.velocity.y > 0 ? 'jump' : 'fall';
     else if (this.punchTimer > 0) this.moveState = 'punch';
     else if (horizSpeed > 6.4) this.moveState = 'sprint';

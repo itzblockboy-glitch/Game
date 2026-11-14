@@ -7,7 +7,7 @@
  *
  *   • android.jar          — compile-time stubs (checked into tools/android/)
  *   • aapt2                — compiles res/ + links AndroidManifest + assets
- *   • smali                — assembles the hand-written DEX for the WebView host
+ *   • ecj + d8             — compile + dex the Java WebView host (android/java)
  *   • node:crypto          — signs the finished zip with APK Signature Scheme v2
  *
  * Output: dist/LosSantos-<version>.apk (runs fully offline; multiplayer/voice
@@ -24,13 +24,14 @@ import crypto from 'node:crypto';
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const AND = path.join(ROOT, 'android');
 const DIST = path.join(ROOT, 'dist');
-const OUT = path.join(ROOT, 'release', 'LosSantos-1.0.0.apk');
+const OUT = path.join(ROOT, 'release', 'LosSantos-1.0.1.apk');
 const WORK = fs.mkdtempSync(path.join(os.tmpdir(), 'ls-apk-'));
 
 const TOOLS = process.env.LS_ANDROID_TOOLS || path.join(ROOT, 'tools', 'android');
 const AAPT2 = path.join(TOOLS, 'aapt2');
 const ANDROID_JAR = path.join(TOOLS, 'android.jar');
-const SMALI = path.join(TOOLS, 'smali.jar');
+const ECJ = path.join(TOOLS, 'ecj.jar');
+const D8 = path.join(TOOLS, 'd8.jar');
 // prefer an explicit LS_JAVA, then PATH, then the toolchain-local runtime
 const JAVA = process.env.LS_JAVA
   || (() => {
@@ -222,7 +223,7 @@ function have(file) {
 // app.js, styles.css, draco/ and models/ all resolve relative to file://
 const assetsGame = path.join(WORK, 'assets', 'game');
 fs.mkdirSync(assetsGame, { recursive: true });
-const skip = new Set(['LosSantos-1.0.0.apk']);
+const skip = new Set(['LosSantos-1.0.0.apk', 'LosSantos-1.0.1.apk']);
 const copy = (from, to) => {
   for (const e of fs.readdirSync(from, { withFileTypes: true })) {
     if (skip.has(e.name)) continue;
@@ -280,8 +281,41 @@ run(AAPT2, [
 ]);
 
 // ---------------------------------------------------------------- 3. dex
-const dex = path.join(WORK, 'classes.dex');
-run(JAVA, ['-cp', SMALI, 'org.jf.smali.main', '-o', dex, path.join(AND, 'smali')]);
+// The host activity is real Java (android/java), compiled with the Eclipse
+// compiler and dexed with d8 — no hand-written smali, so the bytecode Android
+// verifies at launch is exactly what javac would produce.
+const javaOut = path.join(WORK, 'classes');
+fs.mkdirSync(javaOut, { recursive: true });
+const javaSources = [];
+const collectJava = (dir) => {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) collectJava(full);
+    else if (e.name.endsWith('.java')) javaSources.push(full);
+  }
+};
+collectJava(path.join(AND, 'java'));
+run(JAVA, ['-jar', ECJ, '-1.7', '-nowarn', '-cp', ANDROID_JAR, '-d', javaOut, ...javaSources]);
+
+const dexOut = path.join(WORK, 'dex');
+fs.mkdirSync(dexOut, { recursive: true });
+const classFiles = [];
+const collectClass = (dir) => {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) collectClass(full);
+    else if (e.name.endsWith('.class')) classFiles.push(full);
+  }
+};
+collectClass(javaOut);
+run(JAVA, [
+  '-cp', D8, 'com.android.tools.r8.D8',
+  '--min-api', '24', '--release',
+  '--lib', ANDROID_JAR,
+  '--output', dexOut,
+  ...classFiles,
+]);
+const dex = path.join(dexOut, 'classes.dex');
 
 // splice classes.dex (stored) into the linked apk
 const zipOut = path.join(WORK, 'app-dex.apk');

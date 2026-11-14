@@ -125,6 +125,9 @@ export class Vehicle {
    * @param {object} input { throttle, brake, steer, handbrake, up, down, yawAxis }
    */
   update(dt, input, world) {
+    // guard against pathological time steps (tab restore, debugger pause, tests):
+    // cap the physics step so a vehicle can never integrate itself off the map
+    dt = Math.min(dt, 0.05);
     if (this.isAircraft) return this.updateAircraft(dt, input, world);
 
     const def = this.def;

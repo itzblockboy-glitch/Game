@@ -1664,8 +1664,16 @@ let lastTris = 0;
 let fpsAccum = 0;
 let fpsFrames = 0;
 
+/**
+ * Headless test hook: `__game.step(ms, n)` advances the simulation without waiting
+ * for requestAnimationFrame. Browsers throttle rAF when a page is not visible
+ * (headless/shell, background tabs), which otherwise makes automated play tests
+ * look like the game is frozen.
+ */
+let manualMode = false;
+
 function frame(now) {
-  requestAnimationFrame(frame);
+  if (!manualMode) requestAnimationFrame(frame);
   const rawDt = Math.min(0.05, (now - last) / 1000);
   last = now;
   const dt = state.paused ? 0 : rawDt;
@@ -1682,6 +1690,8 @@ function frame(now) {
   renderer.info.reset();
 
   if (state.started) {
+    // one physics sub-step per frame, never a giant leap: a backgrounded tab (or a
+    // stalled frame) would otherwise hand vehicle physics a huge dt and fling traffic
     updatePlayer(dt);
     updateVehicles(dt);
     updateNPCs(dt);
@@ -1779,4 +1789,26 @@ boot().then(() => {
 window.__hotswap = onHotSwap;
 window.__share = shareRoom;
 window.__three = THREE;
-window.__game = { scene, camera, renderer, world, network, voice, ui, get player() { return player; }, get vehicles() { return vehicles; }, state };
+window.__game = {
+  scene, camera, renderer, world, network, voice, ui,
+  get player() { return player; },
+  get vehicles() { return vehicles; },
+  get fps() { return lastFps; },
+  get tris() { return lastTris; },
+  state,
+  /**
+   * Advance N simulated steps of `ms` each (for headless play tests).
+   * Each step is clamped to the same 50 ms ceiling the live loop uses — an
+   * unclamped step makes vehicle physics explode, which then drags the player
+   * along when they are riding.
+   */
+  step(ms = 16.7, n = 1) {
+    manualMode = true;
+    const stepMs = Math.min(50, Math.max(1, ms));
+    for (let i = 0; i < n; i++) {
+      last = performance.now() - stepMs;
+      frame(performance.now());
+    }
+  },
+  resume() { manualMode = false; last = performance.now(); requestAnimationFrame(frame); },
+};

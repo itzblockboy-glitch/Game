@@ -79,15 +79,21 @@ if (!have(aapt2Path)) {
   fs.rmSync(whl, { force: true });
 }
 
-// 3. smali — assemble DEX from the hand-written smali sources
-const smaliPath = path.join(TOOLS, 'smali.jar');
-if (!have(smaliPath)) {
-  console.log('· smali.jar');
-  // Community mirror of the smali fat jar (the upstream release assets block
-  // direct downloads from some networks). Any 2.x fat jar works.
+// 3. ecj (Eclipse Java compiler) + d8 — compile the host activity the normal way
+const ecjPath = path.join(TOOLS, 'ecj.jar');
+if (!have(ecjPath)) {
+  console.log('· ecj.jar');
   await download(
-    'https://raw.githubusercontent.com/TOSPlus/TPS/master/build/tools/apktool/smali.jar',
-    smaliPath,
+    'https://raw.githubusercontent.com/SciAps/nexus/master/org/eclipse/jdt/core/compiler/ecj/4.6.1/ecj-4.6.1.jar',
+    ecjPath,
+  );
+}
+const d8Path = path.join(TOOLS, 'd8.jar');
+if (!have(d8Path)) {
+  console.log('· d8.jar');
+  await download(
+    'https://raw.githubusercontent.com/kansas1295/optapp/master/build-tools/34.0.4/lib/d8.jar',
+    d8Path,
   );
 }
 

@@ -308,6 +308,9 @@ export class World {
     this.scene.add(root);
 
     root.updateMatrixWorld(true);
+    // Index the ground while the primitives still carry their names — merging
+    // below replaces them with unnamed city buckets.
+    this._indexTerrain(root);
     // Merge the map's primitives into ~220 m spatial buckets, one mesh per
     // (bucket, material). Keeps frustum culling granular but drops draw calls by ~5x.
     this.chunks = [];
@@ -378,6 +381,78 @@ export class World {
       c.tris = (c.mesh.geometry.index ? c.mesh.geometry.index.count : c.mesh.geometry.attributes.position.count) / 3;
     }
     return root;
+  }
+
+  /**
+   * Index the map's ground so the character controller knows where the floor is.
+   * The city mesh is flat at y≈0 but dips below the ocean surface (y=-0.15) out
+   * to sea, so "solid ground" cannot be a constant — it has to be sampled.
+   * Buckets triangles on a 40 m grid and only keeps the top surface.
+   */
+  _indexTerrain(root) {
+    this.terrain = new Map();
+    this.terrainCell = 40;
+    this.groundY = 0.02;
+    const CELL = this.terrainCell;
+    const push = (key, tri) => {
+      let b = this.terrain.get(key);
+      if (!b) this.terrain.set(key, (b = []));
+      b.push(tri);
+    };
+    const a = new THREE.Vector3(), b2 = new THREE.Vector3(), c = new THREE.Vector3();
+    root.traverse((o) => {
+      if (!o.isMesh || !o.geometry?.attributes?.position) return;
+      const n = (o.name || '').toLowerCase();
+      const mat = (o.material?.name || '').toLowerCase();
+      if (!/terrain|beach|ground|sand|road|street|sidewalk|asphalt/.test(n + ' ' + mat)) return;
+      const g = o.geometry;
+      const pos = g.attributes.position;
+      const idx = g.index;
+      const count = idx ? idx.count : pos.count;
+      for (let i = 0; i < count; i += 3) {
+        const i0 = idx ? idx.getX(i) : i;
+        const i1 = idx ? idx.getX(i + 1) : i + 1;
+        const i2 = idx ? idx.getX(i + 2) : i + 2;
+        a.fromBufferAttribute(pos, i0).applyMatrix4(o.matrixWorld);
+        b2.fromBufferAttribute(pos, i1).applyMatrix4(o.matrixWorld);
+        c.fromBufferAttribute(pos, i2).applyMatrix4(o.matrixWorld);
+        const x0 = Math.floor(Math.min(a.x, b2.x, c.x) / CELL);
+        const x1 = Math.floor(Math.max(a.x, b2.x, c.x) / CELL);
+        const z0 = Math.floor(Math.min(a.z, b2.z, c.z) / CELL);
+        const z1 = Math.floor(Math.max(a.z, b2.z, c.z) / CELL);
+        // a triangle spanning many cells is rare here; register it in each so a
+        // sample never falls through a seam
+        for (let ix = x0; ix <= x1; ix++) {
+          for (let iz = z0; iz <= z1; iz++) {
+            push(`${ix},${iz}`, [a.x, a.y, a.z, b2.x, b2.y, b2.z, c.x, c.y, c.z]);
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Ground height at (x, z). Returns the highest terrain surface under the point,
+   * or null when the point is outside the map (open sea / off-world).
+   */
+  groundAt(x, z) {
+    if (!this.terrain || !this.terrain.size) return null;
+    const CELL = this.terrainCell;
+    const list = this.terrain.get(`${Math.floor(x / CELL)},${Math.floor(z / CELL)}`);
+    if (!list) return null;
+    let best = null;
+    for (const t of list) {
+      const [ax, ay, az, bx, by, bz, cx, cy, cz] = t;
+      const d0 = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(d0) < 1e-9) continue;
+      const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / d0;
+      const l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / d0;
+      const l3 = 1 - l1 - l2;
+      if (l1 < -0.002 || l2 < -0.002 || l3 < -0.002) continue;
+      const y = l1 * ay + l2 * by + l3 * cy;
+      if (best === null || y > best) best = y;
+    }
+    return best;
   }
 
   setColliders(list) {

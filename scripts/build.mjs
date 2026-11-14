@@ -57,6 +57,14 @@ for (const f of fs.readdirSync(MODELS)) {
 for (const f of fs.readdirSync(path.join(ROOT, 'public/draco'))) {
   fs.copyFileSync(path.join(ROOT, 'public/draco', f), path.join(DIST, 'draco', f));
 }
+// icons (PWA + launcher)
+const ICONS = path.join(ROOT, 'public/icons');
+if (fs.existsSync(ICONS)) {
+  fs.mkdirSync(path.join(DIST, 'icons'), { recursive: true });
+  for (const f of fs.readdirSync(ICONS)) {
+    fs.copyFileSync(path.join(ICONS, f), path.join(DIST, 'icons', f));
+  }
+}
 // favicon / misc public files (if any)
 for (const f of fs.readdirSync(path.join(ROOT, 'public'))) {
   const p = path.join(ROOT, 'public', f);

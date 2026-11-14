@@ -14,7 +14,9 @@
     "simulate": "node scripts/simulate.mjs",
     "test": "npm run check && npm run simulate",
     "apk": "node scripts/build-apk.mjs",
-    "android:setup": "node scripts/fetch-android-tools.mjs"
+    "android:setup": "node scripts/fetch-android-tools.mjs",
+    "check:apk": "node scripts/check-apk.mjs",
+    "play:apk": "node scripts/dev/apkplay.mjs"
   },
   "repository": {
     "type": "git",
