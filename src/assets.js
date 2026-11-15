@@ -74,6 +74,12 @@ export async function cacheSize() {
   });
 }
 
+// set once at boot so loaded materials can use the device's real anisotropy limit
+let rendererRef = null;
+export function setRenderer(r) {
+  rendererRef = r;
+}
+
 // --------------------------------------------------------------- loader
 const draco = new DRACOLoader();
 draco.setDecoderPath('/draco/');
@@ -106,8 +112,43 @@ function parseGLB(buffer) {
 }
 
 /** Normalise a loaded glTF into a template we can clone cheaply */
+/**
+ * Configure every texture on a material for clean minification.
+ *
+ * Nothing in the pipeline was setting these, so three used its defaults and the
+ * 128x128 city textures aliased into a shimmering mess at distance — the ground
+ * read as flat white mush because minification blur averaged the detail away.
+ * Trilinear + anisotropic filtering keeps asphalt and grass legible at range,
+ * which is most of the perceived "graphics quality" of a city scene.
+ */
+function tuneTextures(material, maxAniso) {
+  const seen = new Set();
+  const fields = [
+    'map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap',
+    'alphaMap', 'bumpMap', 'displacementMap', 'lightMap', 'specularMap',
+  ];
+  for (const f of fields) {
+    const tex = material[f];
+    if (!tex || !tex.isTexture || seen.has(tex)) continue;
+    seen.add(tex);
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.anisotropy = maxAniso;
+    // the city textures are small and tiled; repeat wrapping is what they expect
+    if (!tex.userData?.keepWrapping) {
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+    }
+    tex.needsUpdate = true;
+  }
+}
+
 function makeTemplate(gltf, meta) {
   const scene = gltf.scene;
+  const maxAniso = rendererRef
+    ? Math.min(8, rendererRef.capabilities.getMaxAnisotropy())
+    : 4;
   scene.traverse((o) => {
     if (o.isMesh) {
       o.castShadow = true;
@@ -117,6 +158,7 @@ function makeTemplate(gltf, meta) {
         if (!m) continue;
         m.vertexColors = m.vertexColors || (o.geometry.attributes.color !== undefined);
         m.envMapIntensity = 0.85;
+        tuneTextures(m, maxAniso);
         if (m.emissiveIntensity === 1 && m.emissive && m.emissive.getHex() !== 0) {
           m.emissiveIntensity = m.userData.emissiveStrength || 1.6;
         }

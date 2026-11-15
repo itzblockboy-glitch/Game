@@ -18,7 +18,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const APK = path.resolve(process.argv[2] || path.join(ROOT, 'release', 'LosSantos-1.0.0.apk'));
+// Default to the newest build in release/ rather than a hard-coded version —
+// the hard-coded 1.0.0 path meant every later release was verified against a
+// stale APK, which is how a passing check shipped broken categorisation.
+function newestApk() {
+  const dir = path.join(ROOT, 'release');
+  const apks = fs.readdirSync(dir)
+    .filter((f) => f.toLowerCase().endsWith('.apk'))
+    .map((f) => ({ f, mtime: fs.statSync(path.join(dir, f)).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime);
+  if (!apks.length) throw new Error('no APKs in release/');
+  return path.join(dir, apks[0].f);
+}
+const APK = path.resolve(process.argv[2] || newestApk());
 const TOOLS = path.join(ROOT, 'tools', 'android');
 const WORK = fs.mkdtempSync(path.join(import.meta.dirname ? '/tmp' : '/tmp', 'ls-apkcheck-'));
 
@@ -89,12 +101,22 @@ try {
 } catch (err) {
   bad(`aapt2 xmltree failed: ${err.message}`);
 }
-const hasAttr = (name) => new RegExp(`A: android:${name}\\(0x0101[0-9a-f]+\\)=\\(type 0x12\\)0xffffffff`).test(manifestDump)
-  || new RegExp(`android:${name}[^\\n]*=(TRUE|true|0xffffffff)`).test(manifestDump);
+// Different aapt2 builds print the attribute prefix differently: some emit the
+// bare `android:` form, others the fully-qualified namespace URI. Match the
+// local name regardless of prefix, otherwise every game signal reads as absent
+// even though aapt2 shows it plainly in the dump.
+const attrLine = (name) => new RegExp(`(?:android:|/android:)${name}\\(0x0101[0-9a-f]+\\)=([^\\n]*)`, 'i').exec(manifestDump);
+const hasAttr = (name) => {
+  const m = attrLine(name);
+  if (!m) return false;
+  const v = m[1].trim();
+  return /^(true|TRUE|0xffffffff)/.test(v)
+    || /^0x[0-9a-f]+$/.test(v) && parseInt(v, 16) !== 0;
+};
 // android:appCategory is an enum: 0 = GAME, 1 = AUDIO, 2 = VIDEO, 3 = IMAGE,
 // 4 = SOCIAL, 5 = NEWS, 6 = MAPS, 7 = PRODUCTIVITY, 8 = ACCESSIBILITY.
 // aapt2 renders it as the raw ordinal, so 0 means GAME.
-const appCategoryValues = [...manifestDump.matchAll(/android:appCategory\(0x01010545\)=(-?\d+)/g)].map((m) => Number(m[1]));
+const appCategoryValues = [...manifestDump.matchAll(/(?:android:|\/android:)appCategory\(0x01010545\)=(-?\d+)/g)].map((m) => Number(m[1]));
 const checks = [
   ['application android:isGame="true"', hasAttr('isGame')],
   ['android:appCategory = 0 (CATEGORY_GAME)', appCategoryValues.length > 0 && appCategoryValues.every((v) => v === 0)],

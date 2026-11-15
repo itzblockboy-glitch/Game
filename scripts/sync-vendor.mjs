@@ -61,6 +61,40 @@ for (const [src, dst] of FILES) {
     .replace(/from\s+['"]\.\.\/shaders\/OutputShader\.js['"]/g, "from './OutputShader.js'")
     .replace(/from\s+['"]\.\.\/shaders\/SMAAShader\.js['"]/g, "from './SMAAShader.js'")
     .replace(/from\s+['"]\.\/OutputPass\.js['"]/g, "from './OutputPass.js'");
+
+  // ---------------------------------------------------------------- patches
+  // These must be applied HERE, not by hand in src/vendor: this script runs on
+  // postinstall and overwrites the tree, so a manual edit silently disappears on
+  // the next `npm install` (that is exactly how the 1.0.2 "Invalid URL" crash
+  // came back in 1.0.4 during development).
+  if (dst === 'DRACOLoader.js') {
+    // Upstream derives decoder URLs from `import.meta.url`. esbuild lowers
+    // import.meta to `{}` for es2019 targets, so `new URL(path, undefined)`
+    // throws at MODULE SCOPE and takes the whole bundle down before any UI
+    // exists. The game always calls setDecoderPath('/draco/'), so these are
+    // just fallbacks — make them plain root-relative paths.
+    code = code.replace(
+      /^const WASM_BIN_URL = new URL\([^;]*\)\.toString\(\);$/m,
+      "const WASM_BIN_URL = '/draco/draco_decoder.wasm';",
+    );
+    code = code.replace(
+      /^const WASM_JS_URL = new URL\([^;]*\)\.toString\(\);$/m,
+      "const WASM_JS_URL = '/draco/draco_wasm_wrapper.js';",
+    );
+    code = code.replace(
+      /^const JS_URL = new URL\([^;]*\)\.toString\(\);$/m,
+      "const JS_URL = '/draco/draco_decoder.js';",
+    );
+    code = code.replace(/js: new URL\([^)]*import\.meta\.url[^)]*\)\.toString\(\),/g,
+      "js: '/draco/draco_wasm_wrapper.js',");
+    code = code.replace(/wasm: new URL\([^)]*import\.meta\.url[^)]*\)\.toString\(\),/g,
+      "wasm: '/draco/draco_decoder.wasm',");
+    if (/new URL\([^)]*import\.meta\.url/.test(code)) {
+      throw new Error('sync-vendor: DRACOLoader import.meta patch did not apply — '
+        + 'the bundle would crash with "TypeError: Invalid URL" at load');
+    }
+  }
+
   fs.writeFileSync(path.join(OUT, dst), code);
   n++;
 }

@@ -38,6 +38,10 @@ export const VEHICLE_DEFS = {
   little_bird_helicopter: { name: 'MH-6 Little Bird', top: 88, accel: 14, brake: 16, grip: 2.4, steer: 1.6, mass: 1200, type: 'heli' },
 };
 
+const _v2 = new THREE.Vector3();
+const _q = new THREE.Quaternion();
+const _up = new THREE.Vector3(0, 1, 0);
+
 export class Vehicle {
   constructor(defId, modelId) {
     this.id = defId;
@@ -151,18 +155,91 @@ export class Vehicle {
     this.speed = THREE.MathUtils.clamp(this.speed, -def.top * 0.34, def.top);
     if (Math.abs(this.speed) < 0.05 && throttle === 0) this.speed = 0;
 
-    // yaw from steering (bicycle-ish model)
-    const turnRate = (this.steerAngle * this.speed) / Math.max(2.4, def.mass / 600);
-    if (Math.abs(this.speed) > 0.2) {
-      const yawDelta = turnRate * dt * (input.handbrake ? 1.55 : 1);
-      this.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawDelta));
+    // Apply the engine/brake force along the heading. Crucially we ADD to the
+    // existing velocity instead of overwriting it: the lateral component left
+    // over from last frame is exactly the slip the tyres are about to fight.
+    forward.set(0, 0, 1).applyQuaternion(this.quaternion);
+    {
+      const along = _v2.copy(this.velocity).addScaledVector(forward, -this.velocity.dot(forward));
+      this.velocity.copy(along).addScaledVector(forward, this.speed);
     }
 
-    // lateral grip (drift feel)
-    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.quaternion);
-    const lateral = this.velocity.dot(right);
-    this.velocity.addScaledVector(right, -lateral * Math.min(1, def.grip * dt));
-    this.velocity.lerp(forward.clone().multiplyScalar(this.speed), Math.min(1, dt * 8));
+    // ------------------------------------------------ tyre model
+    // The old code had two problems that made every car feel like it was on ice:
+    //   1. grip was a constant, so a 300 km/h supercar gripped exactly as well as
+    //      a parked one, and
+    //   2. `velocity.lerp(forward * speed, dt*8)` dragged the *velocity vector*
+    //      onto the *heading* every frame. Turning therefore always injected
+    //      lateral slip that grip then had to fight, which is textbook permanent
+    //      drifting.
+    // Real tyres saturate: below the slip limit they hold almost perfectly, past
+    // it they break away progressively. Model that directly instead.
+    const right = _v2.set(1, 0, 0).applyQuaternion(this.quaternion);
+    const speedAbs = Math.abs(this.speed);
+    const speedRatio = Math.min(1, speedAbs / def.top);
+
+    // How much lateral force the tyres can still transmit. Grip falls off with
+    // speed (weight transfer / aero) but never below ~35% so it stays controllable.
+    const gripAvail = def.grip * (1 - speedRatio * 0.35) * (input.handbrake ? 0.42 : 1);
+
+    // Lateral slip in m/s, and how much of it one step can remove. Capping the
+    // correction is what gives a believable break-away instead of snap-to-line.
+    let lateral = this.velocity.dot(right);
+    // dt-independent exponential decay: fraction of lateral slip the tyres can
+    // remove this step. grip~3.5 -> ~0.92 per 60fps frame, i.e. the car tracks
+    // its nose almost exactly, but a handbrake (30%) leaves a controllable slide.
+    const gripFactor = 1 - Math.exp(-gripAvail * 2.4 * dt);
+    const maxGripStep = Math.abs(lateral) * gripFactor;
+
+    if (Math.abs(lateral) <= maxGripStep) {
+      // inside the traction circle: kill the slip entirely, no drift
+      this.velocity.addScaledVector(right, -lateral);
+    } else {
+      // beyond it: remove what the tyres can hold, the rest keeps sliding
+      this.velocity.addScaledVector(right, -Math.sign(lateral) * maxGripStep);
+    }
+
+    // Yaw from steering — a proper bicycle model. Turn rate scales with road
+    // speed but saturates, so parking-speed steering is not twitchy and
+    // high-speed steering does not spin the car.
+    const wheelbase = this.isBike ? 1.42 : 2.62;
+    const steerRad = this.steerAngle * (this.isBike ? 0.42 : 0.30);
+    let turnRate = (speedAbs > 0.4)
+      ? (this.speed / wheelbase) * Math.tan(steerRad)
+      : 0;
+    // A tyre can only generate so much lateral acceleration (~1.4 g for a super
+    // car on street rubber). Beyond that the car must understeer, not spin —
+    // this caps the rotation instead of letting a bicycle model run away.
+    // 1.2 g per grip-unit keeps cornering believable without scrubbing all the
+    // speed off: a higher cap let the car rotate so fast the velocity vector
+    // could never catch up, which read as permanent spin-out.
+    const latAccelCap = (def.grip * 1.2) * 9.81;
+    const rotCap = latAccelCap / Math.max(3.5, speedAbs);
+    turnRate = THREE.MathUtils.clamp(turnRate, -rotCap, rotCap);
+    if (input.handbrake) turnRate *= 1.25;
+
+    if (Math.abs(this.speed) > 0.2) {
+      const yawDelta = turnRate * dt;
+      this.quaternion.multiply(_q.setFromAxisAngle(_up, yawDelta));
+    }
+
+    // Re-project the motion onto the (new) heading. Longitudinal speed is what
+    // the throttle controls; the lateral remainder is whatever survived grip.
+    forward.set(0, 0, 1).applyQuaternion(this.quaternion);
+    this.speed = this.velocity.dot(forward);
+
+    // Sliding sideways scrubs speed — a real tyre dragged across the tarmac
+    // loses energy. This is what stops a drift from becoming an endless, free
+    // 90-degree skate.
+    right.set(1, 0, 0).applyQuaternion(this.quaternion);
+    const sideways = Math.abs(this.velocity.dot(right));
+    if (sideways > 1.0) {
+      // Only the *excess* slip costs momentum, and only gently: a little
+      // understeer scrub is realistic, losing 200 km/h in a bend is not.
+      const excess = Math.max(0, sideways - 1.0);
+      const scrub = Math.min(0.25, excess * excess * 0.006 * dt);
+      this.speed -= Math.sign(this.speed) * Math.abs(this.speed) * scrub;
+    }
 
     this.position.addScaledVector(this.velocity, dt);
 

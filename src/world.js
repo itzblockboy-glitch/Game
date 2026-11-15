@@ -181,10 +181,14 @@ export class World {
 
   // -------------------------------------------------------------- lights
   _buildLights() {
-    this.hemi = new THREE.HemisphereLight(0xcfe4ff, 0x6b6248, 1.15);
+    // Total diffuse irradiance has to stay near 1.0 or every albedo clips to
+    // white after ACES tone mapping. The old rig summed sun 2.4 + hemi 1.15 +
+    // ambient 0.34 + env 0.55 ≈ 3.3x, which is why the ground rendered as a
+    // featureless white sheet instead of textured asphalt.
+    this.hemi = new THREE.HemisphereLight(0xcfe4ff, 0x6b6248, 0.38);
     this.scene.add(this.hemi);
 
-    this.sun = new THREE.DirectionalLight(0xfff2d5, 2.4);
+    this.sun = new THREE.DirectionalLight(0xfff2d5, 1.35);
     this.sun.position.set(120, 180, 80);
     this.sun.castShadow = true;
     const size = this.renderer.capabilities.maxTextureSize > 4096 ? 2048 : 1024;
@@ -204,7 +208,8 @@ export class World {
     this.scene.add(this.moon);
     this.moon.target = this.sun.target;
 
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.34));
+    this.ambient = new THREE.AmbientLight(0xffffff, 0.06);
+    this.scene.add(this.ambient);
   }
 
   /** cheap PMREM probe baked once from the sky shader (no downloads, ~2 ms) */
@@ -220,7 +225,7 @@ export class World {
       tmp.add(skyClone);
       const rt = pmrem.fromScene(tmp, 0, 1, 2000);
       this.scene.environment = rt.texture;
-      this.scene.environmentIntensity = 0.55;
+      this.scene.environmentIntensity = 0.18;
       this.envRT = rt;
       pmrem.dispose();
     } catch (e) {
