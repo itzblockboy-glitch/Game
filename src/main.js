@@ -15,6 +15,7 @@ import {
   netStats,
   cacheSize,
   clearCache,
+  setRenderer,
 } from './assets.js';
 import { World, MAP_CENTER } from './world.js';
 import { Character, WEAPONS } from './character.js';
@@ -22,6 +23,7 @@ import { Vehicle, VEHICLE_DEFS } from './vehicles.js';
 import { Network, FLAG } from './network.js';
 import { VoiceChat } from './voice.js';
 import { UI } from './ui.js';
+import { ModMenu } from './modmenu.js';
 import { audio } from './sound.js';
 import { VFX } from './vfx.js';
 import { RenderPass } from './vendor/RenderPass.js';
@@ -33,14 +35,22 @@ import { showFatal, humanize, describe, BootAbort } from './boot-error.js';
 
 // ---------------------------------------------------------------- quality tiers
 const QUALITY = [
-  { name: 'Performance', dpr: 0.75, shadow: false, shadowMap: 1024, fog: 0.0022, lod: 300, targetFps: 30, post: false, bloom: 0, msaa: 0 },
-  { name: 'Balanced', dpr: 1.0, shadow: true, shadowMap: 2048, fog: 0.0016, lod: 380, targetFps: 60, post: true, bloom: 0.32, msaa: 2 },
-  { name: 'Cinematic', dpr: 1.35, shadow: true, shadowMap: 3024, fog: 0.0012, lod: 620, targetFps: 60, post: true, bloom: 0.52, msaa: 4 },
+  // `dpr` is the render-resolution CEILING for that tier. It used to be treated
+  // as the target, which meant a 3x phone rendering 'Cinematic' was capped at
+  // 1.35x and then multiplied by the 0.85 data-saver factor — an effective
+  // 1.15x, i.e. a quarter of the pixels the panel can show. That is why the
+  // game looked soft and cheap no matter which preset was selected.
+  { name: 'Performance', dpr: 1.0, shadow: false, shadowMap: 1024, fog: 0.0022, lod: 300, targetFps: 30, post: false, bloom: 0, msaa: 0 },
+  { name: 'Balanced', dpr: 1.75, shadow: true, shadowMap: 2048, fog: 0.0016, lod: 380, targetFps: 60, post: true, bloom: 0.32, msaa: 2 },
+  { name: 'Cinematic', dpr: 2.5, shadow: true, shadowMap: 3024, fog: 0.0012, lod: 620, targetFps: 60, post: true, bloom: 0.52, msaa: 4 },
 ];
 
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const state = {
-  quality: isTouch ? 0 : 1,
+  // Start every device on 'Balanced'. The adaptive controller below already
+  // steps down if frames are late, and starting at the lowest tier made the
+  // first impression of the game look broken.
+  quality: 1,
   dataSaver: true,
   shadows: true,
   photoMode: false,
@@ -93,11 +103,12 @@ if (!renderer) {
   throw new BootAbort(rendererError);
 }
 if (rendererError) console.warn('renderer: fell back to default context attributes', rendererError);
+setRenderer(renderer);
 renderer.setClearColor(0xbfd8ea);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 // ACES + a slightly filmic exposure is the biggest single "realism" lever
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
+renderer.toneMappingExposure = 0.92;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.shadowMap.autoUpdate = true;
@@ -137,28 +148,44 @@ const gradePass = new ShaderPass({
     uGrain: { value: 0.035 },
     uTime: { value: 0 },
     uWarmth: { value: 0.06 },
+    uSaturation: { value: 1.16 },
+    uContrast: { value: 1.08 },
+    uBlack: { value: 0.012 },
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
   fragmentShader: `
-    uniform sampler2D tDiffuse; uniform float uVignette; uniform float uGrain; uniform float uTime; uniform float uWarmth;
+    uniform sampler2D tDiffuse; uniform float uVignette; uniform float uGrain; uniform float uTime;
+    uniform float uWarmth; uniform float uSaturation; uniform float uContrast; uniform float uBlack;
     varying vec2 vUv;
     float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     void main(){
       vec3 c = texture2D(tDiffuse, vUv).rgb;
-      // split-tone: lift warm mids, cool the shadows a touch
+
+      // Contrast around a filmic mid-grey pivot, with the toe pulled down so
+      // asphalt keeps real blacks instead of glowing grey.
+      c = max(c - uBlack, 0.0) / max(1.0 - uBlack, 1e-4);
+      c = clamp((c - 0.18) * uContrast + 0.18, 0.0, 4.0);
+
+      // Saturation: the old pass had none, so every surface drifted toward the
+      // same bleached white. Push chroma back up around the luma axis.
       float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-      c = mix(c, c * vec3(1.0 + uWarmth, 1.0 + uWarmth * 0.2, 1.0 - uWarmth * 0.6), smoothstep(0.15, 0.85, l));
-      c = mix(c, c * vec3(0.94, 0.97, 1.06), 1.0 - smoothstep(0.02, 0.35, l));
-      // gentle contrast curve
-      c = pow(c, vec3(1.03));
+      c = mix(vec3(l), c, uSaturation);
+
+      // split-tone: warm the highlights, cool the shadows
+      c = mix(c, c * vec3(1.0 + uWarmth, 1.0 + uWarmth * 0.2, 1.0 - uWarmth * 0.6),
+              smoothstep(0.25, 0.9, l));
+      c = mix(c, c * vec3(0.93, 0.97, 1.08), 1.0 - smoothstep(0.02, 0.40, l));
+
       // vignette
       vec2 q = vUv - 0.5;
-      float vig = smoothstep(0.9, 0.28, length(q) * 1.25);
+      float vig = smoothstep(0.95, 0.30, length(q) * 1.25);
       c *= mix(1.0, vig, uVignette);
-      // film grain
+
+      // fine grain, slightly stronger in the shadows where banding shows
       float g = hash(vUv * 1024.0 + uTime) - 0.5;
-      c += g * uGrain;
-      gl_FragColor = vec4(c, 1.0);
+      c += g * uGrain * (1.0 - l * 0.6);
+
+      gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
     }`,
 });
 composer.addPass(gradePass);
@@ -185,6 +212,10 @@ const game = {
   timeScale: 1,
   colliders: [],
 };
+
+// Mod menu needs live handlers (renderer, bloom, camera) that are created a
+// little further down, so it is constructed at the end of boot and stored here.
+let modMenu = null;
 
 const vfx = new VFX(scene, renderer);
 let player = null;
@@ -690,6 +721,30 @@ function spawnVehicles() {
     vehicles.push(v);
   }
   game.vehicles = vehicles;
+}
+
+/**
+ * Spawn one vehicle by model id at a world position. Used by the mod menu; keeps
+ * the same bookkeeping as the boot-time spawner so the physics step, the
+ * minimap and the hot-swap path all see it.
+ */
+function spawnVehicleById(modelId, pos) {
+  const template = getTemplate(modelId);
+  if (!template) {
+    console.warn('spawnVehicleById: unknown model', modelId);
+    return null;
+  }
+  const v = new Vehicle(modelId, modelId);
+  const at = pos ? pos.clone() : new THREE.Vector3(0, 0, 0);
+  at.y = Math.max(0, at.y);
+  v.place(at, 0);
+  // give the player a moment to see it arrive
+  v.velocity.set(0, 0, 0);
+  v.speed = 0;
+  scene.add(v.root);
+  vehicles.push(v);
+  game.vehicles = vehicles;
+  return v;
 }
 
 function vehicleIndex(id) {
@@ -1635,7 +1690,10 @@ function applyQuality(level) {
     composer.renderTarget1.dispose();
     composer.renderTarget2.dispose();
   }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.dpr) * (state.dataSaver && isTouch ? 0.85 : 1));
+  // data-saver is a real battery guard on the low tiers, but it must not
+  // silently undo a deliberate "Cinematic" choice.
+  const dprScale = state.dataSaver && isTouch && level < 2 ? 0.85 : 1;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.dpr) * dprScale);
   renderer.setSize(innerWidth, innerHeight);
   composer.setPixelRatio(renderer.getPixelRatio());
   composer.setSize(innerWidth, innerHeight);
@@ -1807,7 +1865,7 @@ function frame(now) {
   if (vfx.flash > 0) {
     renderer.toneMappingExposure = 1.0 + vfx.flash * 0.55;
   } else {
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 0.92;
   }
 
   if (QUALITY[state.quality].post) {
@@ -1821,6 +1879,28 @@ function frame(now) {
 
 // ---------------------------------------------------------------- go
 setupTouch();
+// The mod menu drives live renderer/composer state, so build it once boot has
+// finished wiring those up.
+try {
+  modMenu = new ModMenu({
+    get player() { return player; },
+    get vehicles() { return vehicles; },
+    get scene() { return scene; },
+    get camera() { return camera; },
+    get renderer() { return renderer; },
+    get bloomPass() { return bloomPass; },
+    get world() { return world; },
+    get ui() { return ui; },
+    get audio() { return world.audio; },
+    get voice() { return voice; },
+    spawnVehicle: spawnVehicleById,
+  });
+  window.__modmenu = modMenu;
+  window.__spawnVehicle = spawnVehicleById;
+} catch (err) {
+  console.warn('mod menu failed to initialise', err);
+}
+
 window.__bootReady = false;
 // A boot that never settles is indistinguishable from a black screen. Give it a
 // generous deadline and explain if the device simply cannot load in time.
@@ -1858,6 +1938,10 @@ window.__share = shareRoom;
 window.__three = THREE;
 window.__game = {
   scene, camera, renderer, world, network, voice, ui,
+  get bloomPass() { return bloomPass; },
+  get audio() { return world.audio; },
+  get modMenu() { return modMenu; },
+  spawnVehicle(modelId, pos) { return spawnVehicleById(modelId, pos); },
   get player() { return player; },
   get vehicles() { return vehicles; },
   get fps() { return lastFps; },

@@ -9,6 +9,60 @@
   --danger: #ff5b5b;
   --ok: #7cfc9a;
   --font: 'Barlow Condensed', 'Oswald', 'Roboto Condensed', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* ---- glassmorphism scale ------------------------------------------------
+     One blur radius per elevation keeps the whole UI on the same optical
+     footing: the closer a surface is to the player, the more it blurs what is
+     behind it and the brighter its top-edge highlight. */
+  --glass-1: rgba(255, 255, 255, 0.055);
+  --glass-2: rgba(255, 255, 255, 0.085);
+  --glass-3: rgba(255, 255, 255, 0.13);
+  --glass-line: rgba(255, 255, 255, 0.16);
+  --glass-line-hi: rgba(255, 255, 255, 0.34);
+  --blur-1: 12px;
+  --blur-2: 22px;
+  --blur-3: 36px;
+  --shadow-1: 0 4px 18px rgba(0, 0, 0, 0.34);
+  --shadow-2: 0 12px 40px rgba(0, 0, 0, 0.46);
+  --shadow-3: 0 28px 80px rgba(0, 0, 0, 0.58);
+  --radius-1: 12px;
+  --radius-2: 18px;
+  --radius-3: 26px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------------------------------------------------------------- glass kit */
+/* A reusable frosted panel: translucent fill, real backdrop blur, a 1px inner
+   hairline that reads as the lit edge of a pane, plus a soft outer drop shadow
+   so panels separate from busy scenery without a hard border. */
+.glass {
+  background: linear-gradient(
+    150deg,
+    var(--glass-3) 0%,
+    var(--glass-1) 42%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  backdrop-filter: blur(var(--blur-2)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur-2)) saturate(150%);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius-2);
+  box-shadow: var(--shadow-2), inset 0 1px 0 var(--glass-line-hi);
+}
+
+/* the specular sweep across the top of a pane — the detail that sells glass */
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 55%;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.10) 0%,
+    rgba(255, 255, 255, 0.02) 55%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 * { box-sizing: border-box; }
@@ -105,15 +159,18 @@ canvas { display: block; width: 100%; height: 100%; }
 .hud-top-right {
   position: absolute;
   top: 16px;
-  right: 18px;
+  /* leave room for the fixed mod-menu button at top-right */
+  right: 68px;
   display: flex;
   gap: 8px;
   align-items: center;
 }
 .pill {
-  background: var(--glass);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(150deg, var(--glass-3), var(--glass-1));
+  border: 1px solid var(--glass-line);
+  backdrop-filter: blur(var(--blur-2)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur-2)) saturate(150%);
+  box-shadow: var(--shadow-1), inset 0 1px 0 var(--glass-line-hi);
   border-radius: 99px;
   padding: 6px 13px;
   font-size: 12px;
@@ -767,3 +824,325 @@ kbd {
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.04); }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 4px; }
+
+/* ================================================================ mod menu */
+#modmenu {
+  --card-w: min(720px, 100%);
+  --card-h: min(88vh, 760px);
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  background: rgba(4, 6, 11, 0.58);
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  transition: opacity 0.26s var(--ease), visibility 0.26s var(--ease);
+}
+
+#modmenu.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* card chrome — three stacked slabs that read as one frosted pane */
+#modmenu header.modmenu-head,
+#modmenu .modmenu-body,
+#modmenu footer.modmenu-foot {
+  background: linear-gradient(150deg, var(--glass-3), var(--glass-1) 45%, rgba(255,255,255,0.025));
+  backdrop-filter: blur(var(--blur-3)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur-3)) saturate(160%);
+}
+
+#modmenu header.modmenu-head {
+  position: relative;
+  width: var(--card-w);
+  max-width: var(--card-w);
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 18px 22px 14px;
+  border: 1px solid var(--glass-line);
+  border-bottom: none;
+  border-radius: var(--radius-3) var(--radius-3) 0 0;
+  box-shadow: var(--shadow-3), inset 0 1px 0 var(--glass-line-hi);
+}
+
+#modmenu .modmenu-title {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+#modmenu .modmenu-sub {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+#modmenu .modmenu-x {
+  margin-left: auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-line);
+  background: var(--glass-2);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.18s var(--ease), transform 0.18s var(--ease);
+}
+#modmenu .modmenu-x:hover { background: var(--glass-3); transform: scale(1.06); }
+#modmenu .modmenu-x:active { transform: scale(0.94); }
+
+#modmenu .modmenu-body {
+  width: var(--card-w);
+  height: var(--card-h);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 22px 18px;
+  border-left: 1px solid var(--glass-line);
+  border-right: 1px solid var(--glass-line);
+  box-shadow: var(--shadow-3);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.22) transparent;
+}
+#modmenu .modmenu-body::-webkit-scrollbar { width: 8px; }
+#modmenu .modmenu-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+}
+
+#modmenu footer.modmenu-foot {
+  width: var(--card-w);
+  padding: 12px 22px 16px;
+  border: 1px solid var(--glass-line);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0 0 var(--radius-3) var(--radius-3);
+  box-shadow: var(--shadow-3);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.42);
+  text-align: center;
+}
+
+#modmenu .modmenu-group { padding-top: 14px; }
+#modmenu .modmenu-group h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.9;
+}
+
+#modmenu .modmenu-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px;
+  margin-bottom: 6px;
+  border-radius: var(--radius-1);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: background 0.18s var(--ease), border-color 0.18s var(--ease);
+}
+#modmenu .modmenu-row:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+#modmenu .modmenu-meta { flex: 1; min-width: 0; }
+#modmenu .modmenu-label {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #fff;
+}
+#modmenu .modmenu-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.42);
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+}
+
+/* toggle switch */
+#modmenu .modmenu-switch {
+  flex: 0 0 auto;
+  position: relative;
+  width: 50px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-line);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: background 0.22s var(--ease), border-color 0.22s var(--ease);
+  padding: 0;
+}
+#modmenu .modmenu-switch span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  transition: transform 0.24s var(--ease), background 0.22s var(--ease);
+}
+#modmenu .modmenu-switch.is-on {
+  background: linear-gradient(135deg, rgba(255, 194, 71, 0.9), rgba(255, 122, 69, 0.9));
+  border-color: rgba(255, 194, 71, 0.7);
+  box-shadow: 0 0 18px rgba(255, 194, 71, 0.35);
+}
+#modmenu .modmenu-switch.is-on span {
+  transform: translateX(22px);
+  background: #fff;
+}
+
+/* range slider */
+#modmenu .modmenu-range {
+  flex: 0 0 190px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#modmenu .modmenu-range input[type='range'] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+  cursor: pointer;
+}
+#modmenu .modmenu-range input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid rgba(255, 194, 71, 0.95);
+  box-shadow: 0 0 12px rgba(255, 194, 71, 0.6);
+  cursor: pointer;
+}
+#modmenu .modmenu-range input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid rgba(255, 194, 71, 0.95);
+  cursor: pointer;
+}
+#modmenu .modmenu-range output {
+  flex: 0 0 42px;
+  text-align: right;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* action button */
+#modmenu .modmenu-action {
+  flex: 0 0 auto;
+  min-width: 62px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-line);
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.18s var(--ease), transform 0.12s var(--ease), box-shadow 0.18s var(--ease);
+}
+#modmenu .modmenu-action:hover {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.14);
+}
+#modmenu .modmenu-action:active,
+#modmenu .modmenu-action.is-fired {
+  transform: scale(0.95);
+  background: rgba(255, 194, 71, 0.85);
+  color: #0b0e14;
+  border-color: rgba(255, 194, 71, 0.9);
+}
+
+/* toast */
+.modmenu-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 15%;
+  transform: translate(-50%, 12px);
+  z-index: 9500;
+  padding: 11px 24px;
+  border-radius: 999px;
+  background: rgba(10, 14, 22, 0.82);
+  backdrop-filter: blur(var(--blur-2)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur-2)) saturate(150%);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--shadow-2);
+  color: #fff;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s var(--ease), transform 0.22s var(--ease);
+}
+.modmenu-toast.is-on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* HUD mod button */
+#btn-mod {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 8500;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  border: 1px solid var(--glass-line);
+  background: linear-gradient(150deg, var(--glass-3), var(--glass-1));
+  backdrop-filter: blur(var(--blur-2)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur-2)) saturate(150%);
+  box-shadow: var(--shadow-1), inset 0 1px 0 var(--glass-line-hi);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: transform 0.16s var(--ease), background 0.2s var(--ease);
+}
+#btn-mod:hover { transform: scale(1.06); background: var(--glass-3); }
+#btn-mod:active { transform: scale(0.94); }
+
+body.modmenu-open #hud { pointer-events: none; filter: blur(2px) brightness(0.7); }
+
+@media (max-width: 620px) {
+  #modmenu { padding: 0; }
+  #modmenu { --card-w: 100%; --card-h: calc(100vh - 132px); }
+  #modmenu header.modmenu-head { border-radius: var(--radius-2) var(--radius-2) 0 0; }
+  #modmenu .modmenu-range { flex: 0 0 120px; }
+  #modmenu .modmenu-label { font-size: 14px; }
+  #modmenu .modmenu-hint { font-size: 11px; }
+}

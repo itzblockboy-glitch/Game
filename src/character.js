@@ -548,27 +548,62 @@ export class Character {
       rot(b.shinR, 0.03, 0, 0);
       return;
     }
-    // walk / run / sprint
-    rot(b.thighL, s * swing, 0, 0);
-    rot(b.thighR, -s * swing, 0, 0);
-    rot(b.shinL, Math.max(0, -s) * swing * 1.6 + 0.08, 0, 0);
-    rot(b.shinR, Math.max(0, s) * swing * 1.6 + 0.08, 0, 0);
-    rot(b.footL, -Math.max(0, -s) * 0.35, 0, 0);
-    rot(b.footR, -Math.max(0, s) * 0.35, 0, 0);
-    const lean = st === 'sprint' ? 0.24 : st === 'run' ? 0.13 : 0.05;
-    rot(b.spine, lean, -s * 0.05, 0);
-    rot(b.head, -lean * 0.6, s * 0.03, 0);
+    // ------------------------------------------------ walk / run / sprint
+    // A single sine wave makes a character look like a pendulum: both legs lock
+    // to one phase, the knee never bends on the swing side, and there is no
+    // weight transfer. Real gait has distinct stance and swing phases per leg.
+    //   - the leg that is planted extends and takes the body's weight
+    //   - the leg that is swinging flexes its knee hard to clear the ground
+    //   - hips counter-rotate against the shoulders, and the torso bobs twice
+    //     per stride (once per footfall) rather than once.
+    const p = this.rigPhase;
+    const sinp = Math.sin(p);
+    const cosp = Math.cos(p);
+
+    // Per-leg phase: L leads by half a stride.
+    const thighL = sinp * swing;
+    const thighR = -sinp * swing;
+
+    // Knee flexion: peaks during the swing phase, ~0 through stance. Using
+    // max(0,...) on the *derivative* rather than the raw sine is what makes the
+    // knee snap back instead of sweeping both directions.
+    const kneeL = Math.max(0, -cosp) * swing * 1.9 + 0.06;
+    const kneeR = Math.max(0, cosp) * swing * 1.9 + 0.06;
+    rot(b.thighL, thighL, 0, 0.02);
+    rot(b.thighR, thighR, 0, -0.02);
+    rot(b.shinL, kneeL, 0, 0);
+    rot(b.shinR, kneeR, 0, 0);
+    // Ankle rolls onto the toe through push-off (opposite phase to the knee).
+    rot(b.footL, -kneeL * 0.35 + Math.max(0, cosp) * 0.25, 0, 0);
+    rot(b.footR, -kneeR * 0.35 + Math.max(0, -cosp) * 0.25, 0, 0);
+
+    // Torso: forward lean scales with speed, plus a two-per-stride vertical bob
+    // and a counter-rotation against the pelvis.
+    const lean = st === 'sprint' ? 0.26 : st === 'run' ? 0.15 : 0.06;
+    const bob = Math.abs(cosp) * 0.035 * swing;
+    rot(b.spine, lean + bob, -sinp * 0.06, 0);
+    rot(b.chest, lean * 0.35, -sinp * 0.10, 0);
+    rot(b.head, -lean * 0.8 - bob, sinp * 0.04, 0);
+    // Pelvis rotates INTO the leading leg — the classic hip swagger.
+    rot(b.hips, 0, sinp * 0.11, cosp * 0.035);
+
     if (this.aiming && this.weapon !== 'fists') {
-      rot(b.armR, -1.3 + (this.aimPitch || 0) * 0.8, -0.2, 0.12);
+      // Weapon up: the aim pose (not the gait) owns the arms, but keep a little
+      // walk sway so aiming on the move doesn't look frozen.
+      rot(b.armR, -1.3 + (this.aimPitch || 0) * 0.8 + sinp * 0.06, -0.2, 0.12);
       rot(b.foreArmR, -0.25, 0, 0);
-      rot(b.armL, -1.1 + (this.aimPitch || 0) * 0.5, 0.4, -0.2);
+      rot(b.armL, -1.1 + (this.aimPitch || 0) * 0.5 - sinp * 0.04, 0.4, -0.2);
     } else {
-      rot(b.armL, -s * swing * 0.85, 0, -0.1);
-      rot(b.armR, s * swing * 0.85, 0, 0.1);
-      rot(b.foreArmL, 0.3 + Math.max(0, -s) * 0.5, 0, 0);
-      rot(b.foreArmR, 0.3 + Math.max(0, s) * 0.5, 0, 0);
+      // Arms swing in opposition to the legs, with the elbow flexing on the
+      // forward swing so the forearm trails rather than pointing rigidly down.
+      rot(b.armL, -sinp * swing * 0.92, 0, -0.12);
+      rot(b.armR, sinp * swing * 0.92, 0, 0.12);
+      rot(b.foreArmL, 0.28 + Math.max(0, sinp) * 0.55, 0, 0);
+      rot(b.foreArmR, 0.28 + Math.max(0, -sinp) * 0.55, 0, 0);
+      // Shoulders shrug slightly with the arm swing.
+      if (b.shoulderL) rot(b.shoulderL, 0, 0, Math.max(0, sinp) * 0.05);
+      if (b.shoulderR) rot(b.shoulderR, 0, 0, -Math.max(0, -sinp) * 0.05);
     }
-    rot(b.hips, 0, s * 0.06, 0);
     if (this.punchTimer > 0 && this.weapon === 'fists') {
       const t = 1 - this.punchTimer / 0.34;
       const punch = Math.sin(Math.min(1, t * 1.4) * Math.PI);
